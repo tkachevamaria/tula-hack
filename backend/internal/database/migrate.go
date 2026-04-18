@@ -6,6 +6,12 @@ import (
 )
 
 func Migrate(db *sql.DB) {
+
+	_, err := db.Exec(`PRAGMA foreign_keys = ON;`)
+	if err != nil {
+		log.Fatal("failed to enable foreign keys:", err)
+	}
+
 	queries := []string{
 
 		// ACCOUNTS (role - user/shelter)
@@ -16,8 +22,7 @@ func Migrate(db *sql.DB) {
 			role TEXT NOT NULL,
 			display_name TEXT NOT NULL,
 			bio TEXT,
-			location TEXT,
-			created_at TEXT DEFAULT CURRENT_TIMESTAMP
+			location TEXT
 		);`,
 
 		// PETS (adoption_mode - open/strict) - штука для двойных метчей
@@ -29,7 +34,7 @@ func Migrate(db *sql.DB) {
             breed TEXT,
             age INTEGER,
             description TEXT,
-            adoption_mode TEXT,
+            adoption_mode TEXT DEFAULT 'open',
             status TEXT DEFAULT 'available',
             FOREIGN KEY (owner_id) REFERENCES accounts(id)
         );`,
@@ -42,7 +47,8 @@ func Migrate(db *sql.DB) {
             FOREIGN KEY (pet_id) REFERENCES pets(id)
         );`,
 
-		`CREATE TABLE account_photos (
+		// ACCOUNT PHOTOS
+		`CREATE TABLE IF NOT EXISTS account_photos (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			account_id INTEGER NOT NULL,
 			url TEXT NOT NULL,
@@ -58,10 +64,11 @@ func Migrate(db *sql.DB) {
             is_like INTEGER NOT NULL,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES accounts(id),
-            FOREIGN KEY (pet_id) REFERENCES pets(id)
+            FOREIGN KEY (pet_id) REFERENCES pets(id),
+            UNIQUE(user_id, pet_id)
         );`,
 
-		// OWNER SWIPES (owner -> user)
+		// OWNER SWIPES (owner -> user) (время оставлю тут на всякий)
 		`CREATE TABLE IF NOT EXISTS owner_swipes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             owner_id INTEGER NOT NULL,
@@ -71,7 +78,8 @@ func Migrate(db *sql.DB) {
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (owner_id) REFERENCES accounts(id),
             FOREIGN KEY (user_id) REFERENCES accounts(id),
-            FOREIGN KEY (pet_id) REFERENCES pets(id)
+            FOREIGN KEY (pet_id) REFERENCES pets(id),
+            UNIQUE(owner_id, user_id, pet_id)
         );`,
 
 		// MATCHES
@@ -107,14 +115,6 @@ func Migrate(db *sql.DB) {
             preferred_breed TEXT,
 			preferred_location TEXT,
             FOREIGN KEY (user_id) REFERENCES accounts(id)
-        );`,
-
-		// PET TAGS
-		`CREATE TABLE IF NOT EXISTS pet_tags (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            pet_id INTEGER NOT NULL,
-            tag TEXT,
-            FOREIGN KEY (pet_id) REFERENCES pets(id)
         );`,
 	}
 
