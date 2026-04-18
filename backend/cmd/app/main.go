@@ -19,6 +19,8 @@ func main() {
 	authService := service.NewAuthService(authRepo)
 	authHandler := handlers.NewAuthHandler(authService) // Gin
 
+	//tests.ShowUsers(db) //тест прост
+
 	r := gin.Default()
 
 	// AUTH
@@ -52,6 +54,4 @@ func main() {
 
 	log.Println("Server started on :8080")
 	r.Run(":8080")
-
-	log.Println("Server started")
 }
