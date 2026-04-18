@@ -6,6 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tkachevamaria/tula-hack/backend/internal/database"
 	"github.com/tkachevamaria/tula-hack/backend/internal/handlers"
+	"github.com/tkachevamaria/tula-hack/backend/internal/repository"
+	"github.com/tkachevamaria/tula-hack/backend/internal/service"
 )
 
 func main() {
@@ -13,13 +15,15 @@ func main() {
 	defer db.Close()
 
 	database.Migrate(db)
+	authRepo := repository.NewAuthRepository(db)
+	authService := service.NewAuthService(authRepo)
+	authHandler := handlers.NewAuthHandler(authService) // Gin
 
-	// Gin
 	r := gin.Default()
 
 	// AUTH
-	r.POST("/auth/register", handlers.Register)
-	r.POST("/auth/login", handlers.Login)
+	r.POST("/auth/register", authHandler.Register)
+	r.POST("/auth/login", authHandler.Login)
 
 	// ACCOUNT
 	r.GET("/me", handlers.GetMe)
