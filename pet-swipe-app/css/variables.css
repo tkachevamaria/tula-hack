@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap');
+
+:root {
+  /* Цвета из палитры */
+  --color-bg: #18562E;
+  --color-accent: #F0E5B1;
+  --color-gray: #686464;
+  --color-white: #FFFFFF;
+  --color-input-placeholder: rgba(104, 100, 100, 0.48);
+  
+  /* Шрифты */
+  --font-main: 'Fredoka', 'Arial Rounded MT Bold', 'Nunito', sans-serif;
+  
+  /* Размеры */
+  --radius-lg: 120px;
+  --radius-md: 30px;
+  --radius-sm: 50px;
+  --radius-pill: 9999px;
+  
+  /* Тени */
+  --shadow-soft: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  
+  /* Анимации */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.4s ease;
+}
+
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+}
+
+body {
+  font-family: var(--font-main);
+  background: var(--color-bg);
+  color: var(--color-white);
+  line-height: 1.2;
+  overflow-x: hidden;
+  min-height: 100vh;
+}

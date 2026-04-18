@@ -1,0 +1,282 @@
+/* Секции с прокруткой */
+.section {
+  min-height: 100vh;
+  width: 100%;
+  padding: 44px 199px;
+  position: relative;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.section.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Лендинг */
+.landing-container {
+  width: 100%;
+  max-width: 1512px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.landing-header {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 113px;
+}
+
+.title {
+  font-size: 150px;
+  font-weight: 700;
+  color: var(--color-accent);
+  text-align: center;
+  margin-bottom: 0;
+  line-height: 1;
+}
+
+.subtitle {
+  font-size: 50px;
+  font-weight: 700;
+  color: var(--color-accent);
+  text-align: center;
+  margin-top: 0;
+}
+
+/* Кнопка "Начать" */
+.btn-primary {
+  width: 674px;
+  height: 162px;
+  background: var(--color-accent);
+  border: none;
+  border-radius: var(--radius-lg);
+  color: var(--color-bg);
+  font-size: 70px;
+  font-weight: 700;
+  font-family: var(--font-main);
+  cursor: pointer;
+  margin: 0 auto 107px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-primary:hover {
+  transform: translateY(-4px);
+  box-shadow: 0px 8px 8px rgba(0, 0, 0, 0.3);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Галерея питомцев */
+.pets-showcase {
+  position: relative;
+  width: 100%;
+  height: 600px;
+}
+
+.pet-img {
+  position: absolute;
+  border-radius: 30px;
+  object-fit: cover;
+  box-shadow: var(--shadow-soft);
+}
+
+.pet-1 {
+  width: 289px;
+  height: 341px;
+  left: 461px;
+  top: 520px;
+}
+
+.pet-2 {
+  width: 274px;
+  height: 417px;
+  left: 829px;
+  top: 510px;
+}
+
+.pet-3 {
+  width: 330px;
+  height: 497px;
+  left: 52px;
+  top: 416px;
+}
+
+.pet-4 {
+  width: 295px;
+  height: 524px;
+  left: 1182px;
+  top: 284px;
+}
+
+/* Декоративные элементы */
+.decorative {
+  position: absolute;
+  z-index: -1;
+}
+
+.decorative-paw {
+  width: 126.76px;
+  height: 126.76px;
+  left: 133px;
+  top: 214.35px;
+  transform: rotate(-20deg);
+}
+
+.decorative-bone {
+  width: 126.55px;
+  height: 126.55px;
+  right: 100px;
+  top: 300px;
+  transform: rotate(-100deg);
+}
+
+/* Секция авторизации */
+.auth-container {
+  max-width: 835px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.auth-header {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+/* Переключатель роли */
+.role-switch {
+  display: flex;
+  align-items: center;
+  gap: 43px;
+  margin-bottom: 40px;
+}
+
+.role-label {
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--color-bg);
+  opacity: 0.48;
+  transition: opacity 0.2s ease;
+}
+
+.role-label.active {
+  opacity: 1;
+}
+
+/* Toggle switch */
+.switch {
+  position: relative;
+  width: 130px;
+  height: 70px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--color-white);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-soft);
+  transition: 0.3s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 60px;
+  width: 60px;
+  left: 5px;
+  bottom: 5px;
+  background-color: var(--color-accent);
+  border-radius: 50%;
+  box-shadow: var(--shadow-soft);
+  transition: 0.3s;
+}
+
+input:checked + .slider:before {
+  transform: translateX(60px);
+}
+
+/* Форма */
+.auth-form {
+  width: 749px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: var(--color-accent);
+  padding: 60px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+}
+
+.input-label {
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--color-bg);
+  margin-bottom: 8px;
+}
+
+.input-field {
+  width: 100%;
+  height: 78px;
+  padding: 0 16px;
+  background: var(--color-white);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 40px;
+  font-family: var(--font-main);
+  color: var(--color-bg);
+  outline: none;
+  transition: box-shadow 0.2s ease;
+}
+
+.input-field::placeholder {
+  color: var(--color-input-placeholder);
+}
+
+.input-field:focus {
+  box-shadow: 0 0 0 4px rgba(240, 229, 177, 0.5);
+}
+
+.btn-submit {
+  width: 614px;
+  height: 60px;
+  margin: 20px auto 0;
+  border-radius: var(--radius-sm);
+  font-size: 50px;
+}
+
+.error-message {
+  color: #FF4444;
+  font-size: 24px;
+  text-align: center;
+  margin-top: 10px;
+  min-height: 30px;
+}
+
+/* Свайп-секция (заглушка) */
+.swipe-container {
+  text-align: center;
+  padding-top: 200px;
+}
