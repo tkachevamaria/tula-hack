@@ -19,8 +19,6 @@ func main() {
 	authService := service.NewAuthService(authRepo)
 	authHandler := handlers.NewAuthHandler(authService) // Gin
 
-	//tests.ShowUsers(db) //тест прост
-
 	r := gin.Default()
 
 	// AUTH
@@ -28,8 +26,12 @@ func main() {
 	r.POST("/auth/login", authHandler.Login)
 
 	// ACCOUNT
-	r.GET("/me", handlers.GetMe)
-	r.PUT("/me", handlers.UpdateMe)
+	accountRepo := repository.NewAccountRepository(db)
+	accountService := service.NewAccountService(accountRepo)
+	accountHandler := handlers.NewAccountHandler(accountService)
+
+	r.GET("/me", accountHandler.GetMe)
+	r.PUT("/me", accountHandler.UpdateMe)
 
 	// PETS
 	r.POST("/pets", handlers.CreatePet)
