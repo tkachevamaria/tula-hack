@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PetMatch - Найди друга</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -27,12 +28,18 @@
             <div class="auth-container">
                 <button id="back-to-welcome" class="btn-back">←</button>
                 <h2>Вход / Регистрация</h2>
-                <p class="auth-hint">Введите email и пароль. Если аккаунта нет — создадим новый.</p>
+                <p class="auth-hint">Введите логин и пароль. Если аккаунта нет — создадим новый.</p>
+                
+                <!-- Переключатель роли -->
+                <div class="role-switch">
+                    <button type="button" id="role-user" class="role-btn active">🐾 Человек</button>
+                    <button type="button" id="role-org" class="role-btn">🏢 Организация</button>
+                </div>
                 
                 <form id="auth-form">
                     <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" id="email" placeholder="your@email.com" required>
+                        <label for="login" id="login-label">Логин</label>
+                        <input type="text" id="login" placeholder="Введите логин" required>
                     </div>
                     <div class="form-group">
                         <label for="password">Пароль</label>

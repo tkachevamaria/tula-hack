@@ -1,10 +1,11 @@
-import { authAPI, accountAPI } from './api.js';
+import { authAPI, accountAPI, petsAPI, apiRequest } from './api.js';
 import { AuthManager } from './auth.js';
 
 class App {
     constructor() {
         this.currentScreen = 'welcome';
         this.currentPage = 'main';
+        this.currentRole = 'user';
         this.init();
     }
     
@@ -25,6 +26,12 @@ class App {
         this.logoutBtn = document.getElementById('logout-btn');
         this.filterBtn = document.getElementById('filter-btn');
         
+        this.roleUserBtn = document.getElementById('role-user');
+        this.roleOrgBtn = document.getElementById('role-org');
+        this.loginInput = document.getElementById('login');
+        this.loginLabel = document.getElementById('login-label');
+        this.passwordInput = document.getElementById('password');
+        
         this.navBtns = document.querySelectorAll('.nav-btn');
         this.pages = {
             main: document.getElementById('main-page'),
@@ -34,40 +41,41 @@ class App {
         };
         
         this.authError = document.getElementById('auth-error');
-        this.emailInput = document.getElementById('email');
-        this.passwordInput = document.getElementById('password');
-        
-        this.profileEmail = document.getElementById('profile-email');
+        this.profileLogin = document.getElementById('profile-email');
         this.profileId = document.getElementById('profile-id');
     }
     
     bindEvents() {
-        // Welcome screen
-        this.startBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            console.log('Start button clicked'); // для отладки
-            this.showScreen('auth');
-        });
+        if (this.startBtn) {
+            this.startBtn.addEventListener('click', () => this.showScreen('auth'));
+        }
         
-        this.backToWelcome.addEventListener('click', () => this.showScreen('welcome'));
+        if (this.backToWelcome) {
+            this.backToWelcome.addEventListener('click', () => this.showScreen('welcome'));
+        }
         
-        // Auth form
-        this.authForm.addEventListener('submit', (e) => this.handleAuth(e));
+        if (this.authForm) {
+            this.authForm.addEventListener('submit', (e) => this.handleAuth(e));
+        }
         
-        // Navigation
-        this.navBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const page = btn.dataset.page;
-                this.switchPage(page);
-            });
-        });
-        
-        // Logout
         if (this.logoutBtn) {
             this.logoutBtn.addEventListener('click', () => this.handleLogout());
         }
         
-        // Filter
+        if (this.roleUserBtn) {
+            this.roleUserBtn.addEventListener('click', () => this.switchRole('user'));
+        }
+        
+        if (this.roleOrgBtn) {
+            this.roleOrgBtn.addEventListener('click', () => this.switchRole('shelter'));
+        }
+        
+        this.navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.switchPage(btn.dataset.page);
+            });
+        });
+        
         if (this.filterBtn) {
             this.filterBtn.addEventListener('click', () => {
                 alert('Фильтры будут здесь (в разработке)');
@@ -75,30 +83,49 @@ class App {
         }
     }
     
+    switchRole(role) {
+        this.currentRole = role;
+        
+        if (this.roleUserBtn) {
+            this.roleUserBtn.classList.toggle('active', role === 'user');
+        }
+        if (this.roleOrgBtn) {
+            this.roleOrgBtn.classList.toggle('active', role === 'shelter');
+        }
+        
+        if (role === 'user') {
+            if (this.loginLabel) this.loginLabel.textContent = 'Логин';
+            if (this.loginInput) this.loginInput.placeholder = 'Введите логин';
+        } else {
+            if (this.loginLabel) this.loginLabel.textContent = 'Название организации';
+            if (this.loginInput) this.loginInput.placeholder = 'Введите название организации';
+        }
+    }
+    
     checkAuth() {
         if (AuthManager.isAuthenticated()) {
             this.showScreen('app');
             this.updateProfileInfo();
-            this.loadUserProfile(); // загружаем свежие данные с бэка
         } else {
             this.showScreen('welcome');
         }
     }
     
     showScreen(screenName) {
-        this.welcomeScreen.classList.remove('active');
-        this.authScreen.classList.remove('active');
-        this.appScreen.classList.remove('active');
+        if (this.welcomeScreen) this.welcomeScreen.classList.remove('active');
+        if (this.authScreen) this.authScreen.classList.remove('active');
+        if (this.appScreen) this.appScreen.classList.remove('active');
         
         switch(screenName) {
             case 'welcome':
-                this.welcomeScreen.classList.add('active');
+                if (this.welcomeScreen) this.welcomeScreen.classList.add('active');
                 break;
             case 'auth':
-                this.authScreen.classList.add('active');
+                if (this.authScreen) this.authScreen.classList.add('active');
+                this.switchRole('user');
                 break;
             case 'app':
-                this.appScreen.classList.add('active');
+                if (this.appScreen) this.appScreen.classList.add('active');
                 break;
         }
         
@@ -111,76 +138,73 @@ class App {
         });
         
         Object.values(this.pages).forEach(page => {
-            page.classList.remove('active');
+            if (page) page.classList.remove('active');
         });
         
-        this.pages[pageName].classList.add('active');
-        this.currentPage = pageName;
-        
-        this.loadPageData(pageName);
-    }
-    
-    async loadPageData(pageName) {
-        switch(pageName) {
-            case 'main':
-                await this.loadFeed();
-                break;
-            case 'profile':
-                await this.loadUserProfile();
-                break;
-            case 'swipe':
-                await this.loadSwipeCards();
-                break;
-            case 'chats':
-                await this.loadChats();
-                break;
+        if (this.pages[pageName]) {
+            this.pages[pageName].classList.add('active');
         }
+        
+        this.currentPage = pageName;
+        this.loadPageData(pageName);
     }
     
     async handleAuth(e) {
         e.preventDefault();
-        const email = this.emailInput.value.trim();
-        const password = this.passwordInput.value.trim();
         
-        if (!email || !password) {
-            this.authError.textContent = 'Заполните все поля';
+        const login = this.loginInput?.value.trim() || '';
+        const password = this.passwordInput?.value.trim() || '';
+        
+        if (!login || !password) {
+            if (this.authError) this.authError.textContent = 'Заполните все поля';
             return;
         }
         
-        this.authError.textContent = '';
-        const submitBtn = this.authForm.querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Загрузка...';
+        if (this.authError) this.authError.textContent = '';
+        const submitBtn = this.authForm?.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Загрузка...';
+        }
         
         try {
-            // Пробуем залогиниться
             let response;
+            
+            // Пробуем залогиниться — отправляем login как email (подстройка под бэк)
             try {
-                response = await authAPI.login(email, password);
+                response = await authAPI.auth(login, password, this.currentRole);
                 console.log('Login success:', response);
             } catch (loginError) {
                 console.log('Login failed, trying register:', loginError);
-                // Если не получилось — регистрируем
-                const displayName = email.split('@')[0]; // временное имя из email
-                response = await authAPI.register(email, password, displayName);
+                
+                // Регистрация — отправляем login как email и display_name
+                response = await apiRequest('/auth/register', 'POST', {
+                    email: login,
+                    password: password,
+                    display_name: login,
+                    role: this.currentRole
+                });
                 console.log('Register success:', response);
             }
             
-            // Сохраняем данные
             AuthManager.setUser(response);
             
             this.showScreen('app');
             this.switchPage('main');
             await this.loadUserProfile();
             
-            this.authForm.reset();
+            if (this.authForm) this.authForm.reset();
             
         } catch (error) {
             console.error('Auth error:', error);
-            this.authError.textContent = `Ошибка: ${error.message}`;
+            if (this.authError) {
+                this.authError.textContent = `Ошибка: ${error.message || 'Неверный логин или пароль'}`;
+            }
         } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Продолжить';
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Продолжить';
+            }
         }
     }
     
@@ -193,17 +217,10 @@ class App {
         try {
             const profile = await accountAPI.getMe();
             console.log('Profile loaded:', profile);
-            
-            // Обновляем localStorage актуальными данными
-            AuthManager.setUser({
-                user_id: profile.id,
-                user: profile
-            });
-            
+            AuthManager.setUser({ user_id: profile.id, user: profile });
             this.updateProfileInfo();
         } catch (error) {
             console.error('Failed to load profile:', error);
-            // Используем данные из localStorage
             this.updateProfileInfo();
         }
     }
@@ -211,39 +228,42 @@ class App {
     updateProfileInfo() {
         const profile = AuthManager.getUserProfile();
         
-        if (this.profileEmail) {
-            this.profileEmail.textContent = profile?.email || AuthManager.getUserEmail() || '—';
+        if (this.profileLogin) {
+            this.profileLogin.textContent = profile?.email || profile?.login || AuthManager.getUserLogin() || '—';
         }
         if (this.profileId) {
             this.profileId.textContent = AuthManager.getUserId() || '—';
         }
-        
-        // Можно добавить отображение display_name
-        const profileName = document.getElementById('profile-name');
-        if (profileName) {
-            profileName.textContent = profile?.display_name || 'Пользователь';
+    }
+    
+    async loadPageData(pageName) {
+        switch(pageName) {
+            case 'main':
+                await this.loadFeed();
+                break;
+            case 'profile':
+                await this.loadUserProfile();
+                break;
         }
     }
     
     async loadFeed() {
         try {
-            const feed = await import('./api.js').then(api => api.petsAPI.getFeed());
+            const feed = await petsAPI.getFeed();
             console.log('Feed loaded:', feed);
-            
-            if (feed.pets && feed.pets.length > 0) {
+            if (feed.pets?.length) {
                 this.renderPetsFeed(feed.pets);
             }
         } catch (error) {
-            console.log('Using mock feed data');
-            // Оставляем заглушки из HTML
+            console.log('Using mock feed');
         }
     }
     
     renderPetsFeed(pets) {
-        const feedContainer = document.getElementById('pets-feed');
-        if (!feedContainer) return;
+        const container = document.getElementById('pets-feed');
+        if (!container) return;
         
-        feedContainer.innerHTML = pets.map(pet => `
+        container.innerHTML = pets.map(pet => `
             <div class="pet-card" data-pet-id="${pet.id}">
                 <div class="pet-image-placeholder">${pet.type === 'dog' ? '🐕' : '🐈'}</div>
                 <div class="pet-info">
@@ -252,40 +272,12 @@ class App {
                 </div>
             </div>
         `).join('');
-        
-        // Добавляем обработчики клика
-        feedContainer.querySelectorAll('.pet-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const petId = card.dataset.petId;
-                alert(`Питомец ID: ${petId}\n(Детальная страница в разработке)`);
-            });
-        });
     }
     
     getAgeSuffix(age) {
         if (age === 1) return 'год';
         if (age >= 2 && age <= 4) return 'года';
         return 'лет';
-    }
-    
-    async loadSwipeCards() {
-        try {
-            const feed = await import('./api.js').then(api => api.petsAPI.getFeed());
-            console.log('Swipe cards loaded:', feed);
-            // Здесь будет логика отображения карточек для свайпов
-        } catch (error) {
-            console.log('Using mock swipe data');
-        }
-    }
-    
-    async loadChats() {
-        try {
-            const matches = await import('./api.js').then(api => api.matchesAPI.getMatches());
-            console.log('Matches loaded:', matches);
-            // Здесь будет логика отображения чатов
-        } catch (error) {
-            console.log('Using mock chats data');
-        }
     }
 }
 

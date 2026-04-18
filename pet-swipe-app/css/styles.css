@@ -54,6 +54,39 @@ body {
     background: linear-gradient(135deg, var(--accent-beige) 0%, var(--white) 100%);
 }
 
+/* Переключатель роли */
+.role-switch {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    background: var(--accent-beige);
+    padding: 0.25rem;
+    border-radius: 50px;
+}
+
+.role-btn {
+    flex: 1;
+    padding: 0.75rem;
+    background: transparent;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--secondary-gray);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.role-btn.active {
+    background: var(--primary-dark);
+    color: var(--white);
+}
+
+.role-btn:hover:not(.active) {
+    background: var(--accent-light);
+    color: var(--primary-dark);
+}
+
 .logo-container {
     text-align: center;
     margin-bottom: 2rem;
