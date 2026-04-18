@@ -111,17 +111,26 @@ func (r *PetRepository) GetPetsByOwner(ownerID int) ([]model.Pet, error) {
 func (r *PetRepository) GetFeed(userID int, limit, offset int) ([]model.Pet, error) {
 
 	query := `
-	SELECT p.id, p.owner_id, p.name, p.type, p.breed, p.age, p.description, p.adoption_mode, p.status
+	SELECT 
+		p.id, p.owner_id, p.name, p.type, p.breed, p.age, p.description, p.adoption_mode, p.status
 	FROM pets p
+	LEFT JOIN user_preferences up ON up.user_id = ?
 	WHERE p.owner_id != ?
-	AND p.status = 'available'
 	AND p.id NOT IN (
 		SELECT pet_id FROM swipes WHERE user_id = ?
 	)
+	ORDER BY
+		CASE WHEN up.preferred_type IS NOT NULL AND p.type = up.preferred_type THEN 3 ELSE 0 END +
+		CASE WHEN up.preferred_breed IS NOT NULL AND p.breed = up.preferred_breed THEN 2 ELSE 0 END +
+		CASE 
+			WHEN up.min_age IS NOT NULL AND up.max_age IS NOT NULL 
+			AND p.age BETWEEN up.min_age AND up.max_age THEN 2 
+			ELSE 0 
+		END DESC
 	LIMIT ? OFFSET ?
 	`
 
-	rows, err := r.db.Query(query, userID, userID, limit, offset)
+	rows, err := r.db.Query(query, userID, userID, userID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -131,6 +140,7 @@ func (r *PetRepository) GetFeed(userID int, limit, offset int) ([]model.Pet, err
 
 	for rows.Next() {
 		var p model.Pet
+
 		err := rows.Scan(
 			&p.ID,
 			&p.OwnerID,
@@ -145,6 +155,7 @@ func (r *PetRepository) GetFeed(userID int, limit, offset int) ([]model.Pet, err
 		if err != nil {
 			return nil, err
 		}
+
 		pets = append(pets, p)
 	}
 

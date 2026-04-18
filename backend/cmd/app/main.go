@@ -56,7 +56,7 @@ func main() {
 	r.POST("/owner-swipes", swipeHandler.OwnerSwipe)
 	r.GET("/matches", swipeHandler.GetMatches)
 
-	// MESSAGES || добавить проверку что юзер в метче!!!!
+	// MESSAGES
 	msgRepo := repository.NewMessageRepository(db)
 	msgService := service.NewMessageService(msgRepo)
 	msgHandler := handlers.NewMessageHandler(msgService)
@@ -65,8 +65,13 @@ func main() {
 	r.POST("/messages", msgHandler.SendMessage)
 
 	// PREFERENCES
-	r.POST("/preferences", handlers.SetPreferences)
-	r.GET("/preferences", handlers.GetPreferences)
+
+	prefRepo := repository.NewPreferencesRepository(db)
+	prefService := service.NewPreferencesService(prefRepo)
+	prefHandler := handlers.NewPreferencesHandler(prefService)
+
+	r.POST("/preferences", prefHandler.SetPreferences)
+	r.GET("/preferences", prefHandler.GetPreferences)
 
 	log.Println("Server started on :8080")
 	r.Run(":8080")

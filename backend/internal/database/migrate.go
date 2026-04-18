@@ -108,7 +108,7 @@ func Migrate(db *sql.DB) {
 		// USER PREFERENCES
 		`CREATE TABLE IF NOT EXISTS user_preferences (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL UNIQUE,
             preferred_type TEXT,
             min_age INTEGER,
             max_age INTEGER,
