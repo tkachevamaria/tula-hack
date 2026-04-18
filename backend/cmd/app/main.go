@@ -44,12 +44,14 @@ func main() {
 	r.GET("/my-pets", petHandler.GetMyPets)
 	r.GET("/users/:id/pets", petHandler.GetUserPets) // для любого пользователя
 
-	// SWIPES
-	r.POST("/swipes", handlers.Swipe)
-	r.POST("/owner-swipes", handlers.OwnerSwipe)
+	// SWIPES и MATCHES
+	swipeRepo := repository.NewSwipeRepository(db)
+	swipeService := service.NewSwipeService(swipeRepo)
+	swipeHandler := handlers.NewSwipeHandler(swipeService)
 
-	// MATCHES
-	r.GET("/matches", handlers.GetMatches)
+	r.POST("/swipes", swipeHandler.Swipe)
+	r.POST("/owner-swipes", swipeHandler.OwnerSwipe)
+	r.GET("/matches", swipeHandler.GetMatches)
 
 	// MESSAGES
 	r.GET("/matches/:id/messages", handlers.GetMessages)
