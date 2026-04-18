@@ -144,14 +144,25 @@ h1 {
     background: var(--primary-dark);
     color: var(--white);
     border: none;
-    padding: 1rem 2rem;
+    padding: 1rem 3rem;
     border-radius: 50px;
     font-size: 1.1rem;
     font-weight: 600;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
-    width: 100%;
+    width: auto;  /* Убрали width: 100% */
+    min-width: 200px;  /* Минимальная ширина */
+    max-width: 300px;  /* Максимальная ширина */
     box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    margin: 0 auto;  /* Центрирование */
+    display: inline-block;  /* Чтобы margin auto работал */
+}
+
+.button-wrapper {
+    text-align: center;
+    width: 100%;
+    margin-top: 2rem;
 }
 
 .btn-primary:hover {

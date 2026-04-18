@@ -1,13 +1,10 @@
-// Базовые настройки API
-const API_BASE_URL = 'http://localhost:8080'; // Поменяйте на ваш адрес бэка
+const API_BASE_URL = 'http://localhost:8080';
 
-// Обертка для fetch запросов
 async function apiRequest(endpoint, method = 'GET', body = null) {
     const headers = {
         'Content-Type': 'application/json',
     };
     
-    // Добавляем ID пользователя в заголовок, если он есть
     const userId = localStorage.getItem('user_id');
     if (userId) {
         headers['X-User-ID'] = userId;
@@ -24,10 +21,18 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-        const data = await response.json();
+        
+        // Пытаемся распарсить JSON
+        let data;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            data = await response.text();
+        }
         
         if (!response.ok) {
-            throw new Error(data.error || 'Request failed');
+            throw new Error(data.error || data || 'Request failed');
         }
         
         return data;
@@ -37,10 +42,15 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     }
 }
 
-// Auth API
+// Auth API — обновлён под новую структуру ответа
 export const authAPI = {
-    register: (email, password, displayName = '') => 
-        apiRequest('/auth/register', 'POST', { email, password, display_name: displayName, role: 'user' }),
+    register: (email, password, displayName = '', role = 'user') => 
+        apiRequest('/auth/register', 'POST', { 
+            email, 
+            password, 
+            display_name: displayName, 
+            role 
+        }),
     
     login: (email, password) => 
         apiRequest('/auth/login', 'POST', { email, password }),
@@ -58,11 +68,17 @@ export const petsAPI = {
     getPet: (id) => apiRequest(`/pets/${id}`),
     createPet: (data) => apiRequest('/pets', 'POST', data),
     getMyPets: () => apiRequest('/my-pets'),
+    getUserPets: (userId) => apiRequest(`/users/${userId}/pets`), // новый эндпоинт
 };
 
 // Swipes API
 export const swipesAPI = {
     swipe: (petId, isLike) => apiRequest('/swipes', 'POST', { pet_id: petId, is_like: isLike }),
+    ownerSwipe: (userId, petId, isLike) => apiRequest('/owner-swipes', 'POST', { 
+        user_id: userId, 
+        pet_id: petId, 
+        is_like: isLike 
+    }),
 };
 
 // Matches API

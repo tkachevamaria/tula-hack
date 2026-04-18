@@ -19,8 +19,6 @@ func main() {
 	authService := service.NewAuthService(authRepo)
 	authHandler := handlers.NewAuthHandler(authService) // Gin
 
-	//tests.ShowUsers(db) //тест прост
-
 	r := gin.Default()
 
 	// AUTH
@@ -28,14 +26,23 @@ func main() {
 	r.POST("/auth/login", authHandler.Login)
 
 	// ACCOUNT
-	r.GET("/me", handlers.GetMe)
-	r.PUT("/me", handlers.UpdateMe)
+	accountRepo := repository.NewAccountRepository(db)
+	accountService := service.NewAccountService(accountRepo)
+	accountHandler := handlers.NewAccountHandler(accountService)
+
+	r.GET("/me", accountHandler.GetMe)
+	r.PUT("/me", accountHandler.UpdateMe)
 
 	// PETS
-	r.POST("/pets", handlers.CreatePet)
-	r.GET("/pets/feed", handlers.GetFeed)
-	r.GET("/pets/:id", handlers.GetPet)
-	r.GET("/my-pets", handlers.GetMyPets)
+	petRepo := repository.NewPetRepository(db)
+	petService := service.NewPetService(petRepo)
+	petHandler := handlers.NewPetHandler(petService)
+
+	r.POST("/pets", petHandler.CreatePet)
+	r.GET("/pets/feed", petHandler.GetFeed)
+	r.GET("/pets/:id", petHandler.GetPet)
+	r.GET("/my-pets", petHandler.GetMyPets)
+	r.GET("/users/:id/pets", petHandler.GetUserPets) // для любого пользователя
 
 	// SWIPES
 	r.POST("/swipes", handlers.Swipe)

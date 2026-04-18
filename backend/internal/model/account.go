@@ -6,4 +6,6 @@ type Account struct {
 	PasswordHash string
 	Role         string
 	DisplayName  string
+	Bio          string
+	Location     string
 }
