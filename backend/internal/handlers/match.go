@@ -2,8 +2,17 @@ package handlers
 
 import "github.com/gin-gonic/gin"
 
-func GetMatches(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"matches": []gin.H{},
-	})
+func (h *SwipeHandler) GetMatches(c *gin.Context) {
+	userID, ok := GetUserID(c)
+	if !ok {
+		return
+	}
+
+	matches, err := h.service.GetMatches(userID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed"})
+		return
+	}
+
+	c.JSON(200, matches)
 }
