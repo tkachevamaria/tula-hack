@@ -60,3 +60,26 @@ func (r *MessageRepository) SendMessage(matchID, senderID, receiverID int, text 
 	_, err := r.db.Exec(query, matchID, senderID, receiverID, text)
 	return err
 }
+
+func (r *MessageRepository) CheckAccess(userID, matchID int) (bool, error) {
+
+	query := `
+	SELECT m.user_id, p.owner_id
+	FROM matches m
+	JOIN pets p ON m.pet_id = p.id
+	WHERE m.id = ?
+	`
+
+	var matchedUserID, ownerID int
+
+	err := r.db.QueryRow(query, matchID).Scan(&matchedUserID, &ownerID)
+	if err != nil {
+		return false, err
+	}
+
+	if userID == matchedUserID || userID == ownerID {
+		return true, nil
+	}
+
+	return false, nil
+}
