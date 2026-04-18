@@ -1,8 +1,7 @@
 import './App.css';
 import TinderCard from 'react-tinder-card';
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
-// Данные для карточек (пока заглушки)
 const pets = [
   { name: 'Питомец 1', id: 1 },
   { name: 'Питомец 2', id: 2 },
@@ -13,11 +12,26 @@ const pets = [
 
 function App() {
   const [lastDirection, setLastDirection] = useState();
+  const [goneCards, setGoneCards] = useState(new Set());
+  const cardRefs = useRef({});
 
-  const swiped = (direction, name) => {
-    console.log('Свайп: ' + direction + ' на ' + name);
+  const swiped = useCallback((direction, name) => {
+    console.log(`Свайп: ${direction} на ${name}`);
     setLastDirection(direction);
-  };
+  }, []);
+
+  const onCardLeftScreen = useCallback((id) => {
+    console.log(`Карточка ${id} ушла`);
+    setGoneCards((prev) => new Set(prev).add(id));
+  }, []);
+
+  const swipe = useCallback((dir) => {
+    // Находим первую карточку, которая ещё НЕ ушла (в порядке отображения)
+    const activePet = pets.find((pet) => !goneCards.has(pet.id));
+    if (activePet && cardRefs.current[activePet.id]) {
+      cardRefs.current[activePet.id].swipe(dir);
+    }
+  }, [goneCards]);
 
   return (
     <div className="app-container">
@@ -27,11 +41,14 @@ function App() {
       </div>
 
       <div className="card-container">
-        {pets.map((pet) => (
+        {/* Рендерим в обратном порядке, чтобы первый питомец был визуально сверху */}
+        {[...pets].reverse().map((pet) => (
           <TinderCard
+            ref={(el) => (cardRefs.current[pet.id] = el)}
             className="tinder-card"
             key={pet.id}
             onSwipe={(dir) => swiped(dir, pet.name)}
+            onCardLeftScreen={() => onCardLeftScreen(pet.id)}
             preventSwipe={['up', 'down']}
           >
             <h3>{pet.name}</h3>
@@ -40,9 +57,28 @@ function App() {
       </div>
 
       <div className="controls">
-        <button className="btn btn-no">✕</button>
-        <button className="btn btn-yes">♥</button>
+        <button className="btn btn-no" onClick={() => swipe('left')}>
+          ✕
+        </button>
+        <button className="btn btn-yes" onClick={() => swipe('right')}>
+          ♥
+        </button>
       </div>
+
+      {goneCards.size >= pets.length && (
+        <div style={{ 
+          position: 'absolute', 
+          top: '50%', 
+          left: '50%', 
+          transform: 'translate(-50%, -50%)',
+          fontSize: '1.5rem',
+          color: '#F4EDD2',
+          textAlign: 'center'
+        }}>
+          🎉 Все карточки просмотрены!<br/>
+          <small>Скоро здесь будут новые питомцы</small>
+        </div>
+      )}
     </div>
   );
 }
