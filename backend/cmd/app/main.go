@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/tkachevamaria/tula-hack/backend/internal/database"
 	"github.com/tkachevamaria/tula-hack/backend/internal/handlers"
@@ -20,6 +21,8 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authService) // Gin
 
 	r := gin.Default()
+
+	r.Use(cors.Default())
 
 	// AUTH
 	r.POST("/auth/register", authHandler.Register)
@@ -53,9 +56,13 @@ func main() {
 	r.POST("/owner-swipes", swipeHandler.OwnerSwipe)
 	r.GET("/matches", swipeHandler.GetMatches)
 
-	// MESSAGES
-	r.GET("/matches/:id/messages", handlers.GetMessages)
-	r.POST("/messages", handlers.SendMessage)
+	// MESSAGES || добавить проверку что юзер в метче!!!!
+	msgRepo := repository.NewMessageRepository(db)
+	msgService := service.NewMessageService(msgRepo)
+	msgHandler := handlers.NewMessageHandler(msgService)
+
+	r.GET("/matches/:id/messages", msgHandler.GetMessages)
+	r.POST("/messages", msgHandler.SendMessage)
 
 	// PREFERENCES
 	r.POST("/preferences", handlers.SetPreferences)
