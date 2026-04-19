@@ -6,10 +6,13 @@
     <title>PetMatch - Найди друга</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/profile.css">
+    <link rel="stylesheet" href="css/pets.css">
 </head>
 <body>
     <div id="app">
-        <!-- Экран приветствия (Welcome) -->
+        <!-- Экран приветствия -->
         <div id="welcome-screen" class="screen active">
             <div class="welcome-content">
                 <div class="logo-container">
@@ -17,20 +20,19 @@
                     <h1>PetMatch</h1>
                 </div>
                 <p class="welcome-subtitle">Найди идеального питомца</p>
-                <div class="button-wrapper">  <!-- Добавьте эту обёртку -->
-                  <button id="start-btn" class="btn-primary">Начать</button>
+                <div class="button-wrapper">
+                    <button id="start-btn" class="btn-primary">Начать</button>
                 </div>
             </div>
         </div>
 
-        <!-- Экран регистрации/входа (Auth) -->
+        <!-- Экран авторизации -->
         <div id="auth-screen" class="screen">
             <div class="auth-container">
                 <button id="back-to-welcome" class="btn-back">←</button>
                 <h2>Вход / Регистрация</h2>
                 <p class="auth-hint">Введите логин и пароль. Если аккаунта нет — создадим новый.</p>
                 
-                <!-- Переключатель роли -->
                 <div class="role-switch">
                     <button type="button" id="role-user" class="role-btn active">🐾 Человек</button>
                     <button type="button" id="role-org" class="role-btn">🏢 Организация</button>
@@ -51,91 +53,20 @@
             </div>
         </div>
 
-        <!-- Главный экран приложения (после входа) -->
+        <!-- Главный экран приложения -->
         <div id="app-screen" class="screen">
-            <!-- Навигационная панель сверху -->
             <nav class="top-nav">
-                <button class="nav-btn active" data-page="main">Главная</button>
-                <button class="nav-btn" data-page="swipe">Свайпы</button>
+                <button class="nav-btn active" data-page="feed">Лента</button>
+                <button class="nav-btn" data-page="add-pet">➕</button>
                 <button class="nav-btn" data-page="chats">Чаты</button>
                 <button class="nav-btn" data-page="profile">Профиль</button>
             </nav>
 
-            <!-- Контейнер страниц -->
             <div class="pages-container">
-                <!-- Главная страница (лента питомцев) -->
-                <div id="main-page" class="page active">
-                    <div class="page-header">
-                        <h2>Питомцы рядом</h2>
-                        <button id="filter-btn" class="btn-icon">⚙️</button>
-                    </div>
-                    <div id="pets-feed" class="pets-grid">
-                        <!-- Карточки будут тут -->
-                        <div class="pet-card">
-                            <div class="pet-image-placeholder">🐕</div>
-                            <div class="pet-info">
-                                <h3>Барсик</h3>
-                                <p>Кот, 2 года</p>
-                            </div>
-                        </div>
-                        <div class="pet-card">
-                            <div class="pet-image-placeholder">🐈</div>
-                            <div class="pet-info">
-                                <h3>Мурка</h3>
-                                <p>Кошка, 1 год</p>
-                            </div>
-                        </div>
-                        <div class="pet-card">
-                            <div class="pet-image-placeholder">🐕</div>
-                            <div class="pet-info">
-                                <h3>Рекс</h3>
-                                <p>Собака, 3 года</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Страница свайпов -->
-                <div id="swipe-page" class="page">
-                    <div class="page-header">
-                        <h2>Свайпы</h2>
-                    </div>
-                    <div class="swipe-container">
-                        <div class="swipe-card-placeholder">
-                            <div class="swipe-emoji">🐶</div>
-                            <p>Здесь будут карточки для свайпов</p>
-                            <p class="swipe-hint">← Влево | Вправо →</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Страница чатов -->
-                <div id="chats-page" class="page">
-                    <div class="page-header">
-                        <h2>Сообщения</h2>
-                    </div>
-                    <div class="chats-list">
-                        <div class="chat-placeholder">
-                            <p>💬 Пока нет активных чатов</p>
-                            <p class="chat-hint">Свайпайте питомцев, чтобы начать общение</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Страница профиля -->
-                <div id="profile-page" class="page">
-                    <div class="page-header">
-                        <h2>Профиль</h2>
-                    </div>
-                    <div class="profile-container">
-                        <div class="profile-avatar">👤</div>
-                        <div class="profile-info">
-                            <p><strong>Email:</strong> <span id="profile-email">user@example.com</span></p>
-                            <p><strong>ID:</strong> <span id="profile-id">1</span></p>
-                        </div>
-                        <button id="logout-btn" class="btn-secondary">Выйти</button>
-                    </div>
-                </div>
+                <div id="feed-page" class="page active"></div>
+                <div id="add-pet-page" class="page"></div>
+                <div id="chats-page" class="page"></div>
+                <div id="profile-page" class="page"></div>
             </div>
         </div>
     </div>

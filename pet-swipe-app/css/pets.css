@@ -1,0 +1,264 @@
+/* Add Pet Page & Feed */
+.pet-form-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+/* Двухколоночная форма: фото слева, поля справа */
+.pet-form-header {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.pet-form-header .photo-section {
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.pet-form-header .pet-form-fields {
+    flex: 1;
+}
+
+.photo-section {
+    display: flex;
+    justify-content: center;
+}
+
+.photo-placeholder {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: var(--accent-beige);
+    border: 3px dashed var(--primary-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.photo-placeholder:hover {
+    background: var(--accent-light);
+    border-color: var(--primary-medium);
+}
+
+.photo-placeholder span {
+    font-size: 3rem;
+}
+
+.photo-placeholder p {
+    margin-top: 0.5rem;
+    color: var(--secondary-gray);
+    font-size: 0.9rem;
+}
+
+/* Feed / Swipe */
+.swipe-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+}
+
+.swipe-card-placeholder {
+    background: var(--white);
+    padding: 3rem;
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    border: 3px dashed var(--primary-dark);
+    text-align: center;
+}
+
+.swipe-emoji {
+    font-size: 5rem;
+    margin-bottom: 1rem;
+}
+
+.swipe-hint {
+    margin-top: 1rem;
+    color: var(--secondary-gray);
+    background: var(--accent-beige);
+    padding: 0.5rem;
+    border-radius: 20px;
+}
+
+/* Chats */
+.chats-list {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-placeholder {
+    text-align: center;
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 20px;
+    border: 3px dashed var(--primary-dark);
+}
+
+.chat-hint {
+    background: var(--accent-beige);
+    padding: 0.5rem;
+    border-radius: 20px;
+    margin-top: 0.5rem;
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+    .pet-form-header {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .pet-form-header .pet-form-fields {
+        width: 100%;
+    }
+    
+    .photo-placeholder {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .photo-placeholder span {
+        font-size: 2.5rem;
+    }
+}
+
+/* Модальное окно питомца */
+.pet-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.pet-modal {
+    background: var(--white);
+    border-radius: 20px;
+    max-width: 450px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.pet-modal-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: var(--accent-beige);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-dark);
+    z-index: 1;
+}
+
+.pet-modal-close:hover {
+    background: var(--primary-dark);
+    color: var(--white);
+}
+
+.pet-modal-header {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, var(--accent-beige) 0%, var(--white) 100%);
+    border-radius: 20px 20px 0 0;
+}
+
+.pet-modal-photo {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: var(--white);
+    flex-shrink: 0;
+}
+
+.pet-modal-title {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.pet-modal-title h2 {
+    color: var(--primary-dark);
+    margin: 0 0 0.25rem;
+    font-size: 1.5rem;
+}
+
+.pet-modal-type {
+    color: var(--secondary-gray);
+    font-size: 0.9rem;
+}
+
+.pet-modal-info {
+    padding: 1.5rem;
+}
+
+.pet-info-row {
+    display: flex;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--accent-beige);
+}
+
+.pet-info-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.pet-info-label {
+    width: 100px;
+    font-weight: 600;
+    color: var(--secondary-gray);
+    flex-shrink: 0;
+}
+
+.pet-info-value {
+    color: var(--primary-dark);
+    flex: 1;
+}
+
+.pet-info-description {
+    flex-direction: column;
+}
+
+.pet-info-description .pet-info-label {
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+.pet-info-description .pet-info-value {
+    line-height: 1.5;
+}
