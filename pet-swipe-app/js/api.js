@@ -46,12 +46,6 @@ export const authAPI = {
         }),
 };
 
-// Account API
-export const accountAPI = {
-    getMe: () => apiRequest('/me'),
-    updateMe: (data) => apiRequest('/me', 'PUT', data),
-};
-
 // Pets API
 export const petsAPI = {
     getFeed: () => apiRequest('/pets/feed'),

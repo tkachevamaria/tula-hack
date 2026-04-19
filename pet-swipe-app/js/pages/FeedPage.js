@@ -1,4 +1,3 @@
-import { petsAPI, swipesAPI, preferencesAPI } from '../api.js';
 import { AuthManager } from '../auth.js';
 import { petsAPI, swipesAPI, preferencesAPI, accountAPI } from '../api.js';
 
