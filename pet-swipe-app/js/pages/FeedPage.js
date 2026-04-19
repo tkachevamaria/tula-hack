@@ -46,53 +46,6 @@ export class FeedPage {
         if (dislikeBtn) dislikeBtn.addEventListener('click', () => this.handleSwipe(false));
         if (filterBtn) filterBtn.addEventListener('click', () => this.showFilters());
     }
-    
-    async loadFeed() {
-        const userId = sessionStorage.getItem('user_id');
-        if (!userId) {
-            console.log('Пользователь не авторизован, пропускаем загрузку фида');
-            return;
-        }
-        
-        try {
-            const data = await petsAPI.getFeed();
-            console.log('Raw feed data:', data);
-            
-            let pets = [];
-            
-            if (Array.isArray(data)) {
-                // Для каждого элемента достаём pet
-                pets = data.map(item => item.pet || item);
-            } else if (data && data.pets) {
-                pets = data.pets;
-            } else if (data) {
-                pets = [data];
-            }
-            
-            // Маппим поля на единый формат
-            this.pets = pets.map(p => ({
-                ID: p.ID || p.id,
-                OwnerID: p.OwnerID || p.owner_id,
-                Name: p.Name || p.name,
-                Type: p.Type || p.type,
-                Breed: p.Breed || p.breed,
-                Age: p.Age || p.age,
-                Description: p.Description || p.description,
-                AdoptionMode: p.AdoptionMode || p.adoption_mode || 'strict'
-            }));
-            
-            console.log('Mapped pets:', this.pets);
-            
-            if (this.pets.length === 0) {
-                this.showEmptyMessage();
-            } else {
-                this.renderCurrentCard();
-            }
-        } catch (error) {
-            console.error('Failed to load feed:', error);
-            this.showEmptyMessage();
-        }
-    }
 
     async getOwnerName(ownerId) {
         try {
@@ -501,109 +454,147 @@ export class FeedPage {
     }
     
     showFilters() {
-        this.loadPreferences().then(prefs => {
-            const modal = document.createElement('div');
-            modal.className = 'pet-modal-overlay';
-            modal.innerHTML = `
-                <div class="filter-modal">
-                    <div class="filter-modal-header">
-                        <h2>Фильтры</h2>
-                        <button class="filter-modal-close">&times;</button>
+        console.log('Opening filters...');
+        
+        const modal = document.createElement('div');
+        modal.className = 'pet-modal-overlay';
+        modal.innerHTML = `
+            <div class="filter-modal">
+                <div class="filter-modal-header">
+                    <h2>Фильтры</h2>
+                    <button class="filter-modal-close">&times;</button>
+                </div>
+                
+                <div class="filter-modal-body">
+                    <div class="form-group">
+                        <label for="filter-type">Тип животного</label>
+                        <select id="filter-type">
+                            <option value="">Любой</option>
+                            <option value="dog">Собака</option>
+                            <option value="cat">Кошка</option>
+                        </select>
                     </div>
                     
-                    <div class="filter-modal-body">
-                        <div class="form-group">
-                            <label for="filter-type">Тип животного</label>
-                            <select id="filter-type">
-                                <option value="">Любой</option>
-                                <option value="dog" ${prefs.preferred_type === 'dog' ? 'selected' : ''}>Собака</option>
-                                <option value="cat" ${prefs.preferred_type === 'cat' ? 'selected' : ''}>Кошка</option>
-                            </select>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="filter-age-min">Возраст от</label>
+                            <input type="number" id="filter-age-min" min="0" max="30" placeholder="0">
                         </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group half">
-                                <label for="filter-age-min">Возраст от</label>
-                                <input type="number" id="filter-age-min" min="0" max="30" 
-                                    value="${prefs.min_age || ''}" placeholder="0">
-                            </div>
-                            <div class="form-group half">
-                                <label for="filter-age-max">Возраст до</label>
-                                <input type="number" id="filter-age-max" min="0" max="30" 
-                                    value="${prefs.max_age || ''}" placeholder="30">
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="filter-breed">Порода</label>
-                            <input type="text" id="filter-breed" 
-                                value="${prefs.preferred_breed || ''}" placeholder="Например: Лабрадор">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="filter-location">Город</label>
-                            <input type="text" id="filter-location" 
-                                value="${prefs.preferred_location || ''}" placeholder="Введите город">
+                        <div class="form-group half">
+                            <label for="filter-age-max">Возраст до</label>
+                            <input type="number" id="filter-age-max" min="0" max="30" placeholder="30">
                         </div>
                     </div>
                     
-                    <div class="filter-modal-footer">
-                        <button id="filter-reset" class="btn-secondary">Сбросить</button>
-                        <button id="filter-apply" class="btn-primary">Применить</button>
+                    <div class="form-group">
+                        <label for="filter-breed">Порода</label>
+                        <input type="text" id="filter-breed" placeholder="Например: Лабрадор">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="filter-location">Город</label>
+                        <input type="text" id="filter-location" placeholder="Введите город">
                     </div>
                 </div>
-            `;
-            
-            document.body.appendChild(modal);
-            
-            modal.querySelector('.filter-modal-close').addEventListener('click', () => modal.remove());
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) modal.remove();
-            });
-            
-            modal.querySelector('#filter-reset').addEventListener('click', () => {
-                document.getElementById('filter-type').value = '';
-                document.getElementById('filter-age-min').value = '';
-                document.getElementById('filter-age-max').value = '';
-                document.getElementById('filter-breed').value = '';
-                document.getElementById('filter-location').value = '';
-            });
-            
-            modal.querySelector('#filter-apply').addEventListener('click', async () => {
-                const preferences = {
-                    preferred_type: document.getElementById('filter-type').value || null,
-                    min_age: parseInt(document.getElementById('filter-age-min').value) || null,
-                    max_age: parseInt(document.getElementById('filter-age-max').value) || null,
-                    preferred_breed: document.getElementById('filter-breed').value || null,
-                    preferred_location: document.getElementById('filter-location').value || null
-                };
                 
-                await this.savePreferences(preferences);
-                modal.remove();
-                
-                // Перезагружаем ленту
-                this.currentIndex = 0;
-                await this.loadFeed();
-            });
+                <div class="filter-modal-footer">
+                    <button id="filter-reset" class="btn-secondary">Сбросить</button>
+                    <button id="filter-apply" class="btn-primary">Применить</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        modal.querySelector('.filter-modal-close').addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+        
+        modal.querySelector('#filter-reset').addEventListener('click', () => {
+            document.getElementById('filter-type').value = '';
+            document.getElementById('filter-age-min').value = '';
+            document.getElementById('filter-age-max').value = '';
+            document.getElementById('filter-breed').value = '';
+            document.getElementById('filter-location').value = '';
+        });
+        
+        modal.querySelector('#filter-apply').addEventListener('click', async () => {
+            const preferences = {
+                preferred_type: document.getElementById('filter-type').value || null,
+                min_age: parseInt(document.getElementById('filter-age-min').value) || null,
+                max_age: parseInt(document.getElementById('filter-age-max').value) || null,
+                preferred_breed: document.getElementById('filter-breed').value || null,
+                preferred_location: document.getElementById('filter-location').value || null
+            };
+            
+            await this.savePreferences(preferences);
+            modal.remove();
+            
+            this.currentIndex = 0;
+            await this.loadFeed();
         });
     }
 
-    async loadPreferences() {
+    async loadFeed() {
+        const userId = sessionStorage.getItem('user_id');
+        if (!userId) {
+            console.log('Пользователь не авторизован, пропускаем загрузку фида');
+            return;
+        }
+        
         try {
-            const prefs = await preferencesAPI.get();
-            return prefs || {};
-        } catch {
-            return {};
+            const data = await petsAPI.getFeed();
+            console.log('Raw feed data:', data);
+            
+            if (!data) {
+                this.pets = [];
+                this.showEmptyMessage();
+                return;
+            }
+            
+            let rawPets = [];
+            
+            if (Array.isArray(data)) {
+                rawPets = data.map(item => item.pet || item);
+            } else if (data.pets) {
+                rawPets = data.pets;
+            } else {
+                rawPets = [data];
+            }
+            
+            this.pets = rawPets.map(p => ({
+                ID: p.ID || p.id,
+                OwnerID: p.OwnerID || p.owner_id,
+                Name: p.Name || p.name,
+                Type: p.Type || p.type,
+                Breed: p.Breed || p.breed,
+                Age: p.Age || p.age,
+                Description: p.Description || p.description,
+                AdoptionMode: p.AdoptionMode || p.adoption_mode || 'strict'
+            }));
+            
+            console.log('Mapped pets:', this.pets);
+            
+            if (this.pets.length === 0) {
+                this.showEmptyMessage();
+            } else {
+                this.currentIndex = 0;
+                this.renderCurrentCard();
+            }
+        } catch (error) {
+            console.error('Failed to load feed:', error);
+            this.showEmptyMessage();
         }
     }
 
     async savePreferences(prefs) {
         const cleanPrefs = {
-            preferred_type: prefs.preferred_type || '',
+            preferred_type: prefs.preferred_type || "",
             min_age: prefs.min_age || 0,
-            max_age: prefs.max_age || 0,
-            preferred_breed: prefs.preferred_breed || '',
-            preferred_location: prefs.preferred_location || ''
+            max_age: prefs.max_age || 99,
+            preferred_breed: prefs.preferred_breed || "",
+            preferred_location: prefs.preferred_location || ""
         };
         
         // Сохраняем только в localStorage
