@@ -6,6 +6,8 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     };
     
     const userId = sessionStorage.getItem('user_id');
+    console.log('X-User-ID:', userId);
+    
     if (userId) {
         headers['X-User-ID'] = userId;
     }
