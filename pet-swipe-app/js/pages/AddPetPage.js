@@ -3,6 +3,7 @@ import { petsAPI } from '../api.js';
 export class AddPetPage {
     constructor() {
         this.container = document.getElementById('add-pet-page');
+        this.selectedPhotoFile = null; // ← новое поле для хранения выбранного файла
         this.render();
     }
     
@@ -74,8 +75,28 @@ export class AddPetPage {
         
         const photoPlaceholder = document.getElementById('pet-photo-preview');
         const photoInput = document.getElementById('pet-photo');
+        
         if (photoPlaceholder && photoInput) {
+            // Клик по плейсхолдеру открывает выбор файла
             photoPlaceholder.addEventListener('click', () => photoInput.click());
+            
+            // При выборе файла сохраняем его и показываем превью
+            photoInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    this.selectedPhotoFile = file;
+                    
+                    // Показываем превью
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        photoPlaceholder.innerHTML = `<img src="${ev.target.result}" style="max-width:100%; max-height:100%; border-radius:8px; object-fit:cover;">`;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    this.selectedPhotoFile = null;
+                    photoPlaceholder.innerHTML = `<span>🐾</span><p>Загрузить фото</p>`;
+                }
+            });
         }
     }
     
@@ -100,7 +121,8 @@ export class AddPetPage {
         }
         
         try {
-            await petsAPI.createPet({
+            // 1. Создаём питомца
+            const newPet = await petsAPI.createPet({
                 type: type,
                 breed: breed || '',
                 name: name,
@@ -109,9 +131,28 @@ export class AddPetPage {
                 adoption_mode: 'open'
             });
             
-            this.showMessage('Питомец добавлен!', 'success');
-            document.getElementById('add-pet-form').reset();
+            const petId = newPet.id; // бэк возвращает { id: ... }
             
+            // 2. Если было выбрано фото — загружаем его
+            if (this.selectedPhotoFile && petId) {
+                try {
+                    await this.uploadPetPhoto(petId, this.selectedPhotoFile);
+                } catch (photoError) {
+                    console.error('Ошибка загрузки фото:', photoError);
+                    this.showMessage('Питомец добавлен, но фото не загрузилось', 'warning');
+                }
+            }
+            
+            // Успех
+            this.showMessage('Питомец добавлен!', 'success');
+            
+            // Сбрасываем форму
+            document.getElementById('add-pet-form').reset();
+            this.selectedPhotoFile = null;
+            const preview = document.getElementById('pet-photo-preview');
+            if (preview) preview.innerHTML = `<span>🐾</span><p>Загрузить фото</p>`;
+            
+            // Обновляем список питомцев в профиле
             if (window.updatePetsCallback) {
                 await window.updatePetsCallback();
             }
@@ -126,6 +167,31 @@ export class AddPetPage {
         }
     }
     
+    // Новый метод: загрузка фото питомца
+    async uploadPetPhoto(petId, file) {
+        const userId = sessionStorage.getItem('user_id');
+        if (!userId) throw new Error('Не авторизован');
+        
+        const formData = new FormData();
+        formData.append('photo', file);
+        
+        const response = await fetch(`http://localhost:8080/pets/${petId}/photos`, {
+            method: 'POST',
+            headers: {
+                'X-User-ID': userId
+            },
+            body: formData
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Upload failed: ${response.status} ${errorText}`);
+        }
+        
+        const data = await response.json();
+        return data.url;
+    }
+    
     showMessage(text, type) {
         const msgEl = document.getElementById('pet-form-message');
         if (msgEl) {
@@ -133,10 +199,10 @@ export class AddPetPage {
             msgEl.className = `form-message ${type}`;
         }
         
-        if (type === 'success') {
+        if (type === 'success' || type === 'warning') {
             setTimeout(() => {
                 if (msgEl) msgEl.textContent = '';
-            }, 2000);
+            }, 3000);
         }
     }
 }
