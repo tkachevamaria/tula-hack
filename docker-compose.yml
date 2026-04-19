@@ -12,5 +12,15 @@ services:
       - sqlite_data:/data
     restart: unless-stopped
 
+  web:
+    build:
+      context: ./pet-swipe-app
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+
 volumes:
   sqlite_data:
