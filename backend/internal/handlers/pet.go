@@ -9,11 +9,15 @@ import (
 )
 
 type PetHandler struct {
-	service *service.PetService
+	service      *service.PetService
+	photoService *service.PhotoService
 }
 
-func NewPetHandler(s *service.PetService) *PetHandler {
-	return &PetHandler{service: s}
+func NewPetHandler(s *service.PetService, ps *service.PhotoService) *PetHandler {
+	return &PetHandler{
+		service:      s,
+		photoService: ps,
+	}
 }
 
 type CreatePetInput struct {
@@ -57,9 +61,7 @@ func (h *PetHandler) CreatePet(c *gin.Context) {
 }
 
 func (h *PetHandler) GetPet(c *gin.Context) {
-	idStr := c.Param("id")
-
-	id, _ := strconv.Atoi(idStr)
+	id, _ := strconv.Atoi(c.Param("id"))
 
 	pet, err := h.service.GetPet(id)
 	if err != nil {
@@ -67,7 +69,12 @@ func (h *PetHandler) GetPet(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, pet)
+	photos, _ := h.photoService.GetPetPhotos(id)
+
+	c.JSON(200, gin.H{
+		"pet":    pet,
+		"photos": photos,
+	})
 }
 
 func (h *PetHandler) GetMyPets(c *gin.Context) {
@@ -105,19 +112,28 @@ func (h *PetHandler) GetUserPets(c *gin.Context) {
 }
 
 func (h *PetHandler) GetFeed(c *gin.Context) {
+
 	userID, ok := GetUserID(c)
 	if !ok {
 		return
 	}
 
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-
-	pets, err := h.service.GetFeed(userID, limit, offset)
+	pets, err := h.service.GetFeed(userID, 10, 0)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "failed"})
 		return
 	}
 
-	c.JSON(200, pets)
+	var result []map[string]interface{}
+
+	for _, p := range pets {
+		photos, _ := h.photoService.GetPetPhotos(p.ID)
+
+		result = append(result, map[string]interface{}{
+			"pet":    p,
+			"photos": photos,
+		})
+	}
+
+	c.JSON(200, result)
 }

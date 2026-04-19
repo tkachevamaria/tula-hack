@@ -16,17 +16,16 @@ func NewMessageHandler(s *service.MessageService) *MessageHandler {
 }
 
 func (h *MessageHandler) GetMessages(c *gin.Context) {
-	_, ok := GetUserID(c)
+	userID, ok := GetUserID(c)
 	if !ok {
 		return
 	}
 
-	matchIDStr := c.Param("id")
-	matchID, _ := strconv.Atoi(matchIDStr)
+	matchID, _ := strconv.Atoi(c.Param("id"))
 
-	messages, err := h.service.GetMessages(matchID)
+	messages, err := h.service.GetMessages(userID, matchID)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed"})
+		c.JSON(403, gin.H{"error": "no access"})
 		return
 	}
 
@@ -46,10 +45,7 @@ func (h *MessageHandler) SendMessage(c *gin.Context) {
 	}
 
 	var input SendMessageInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
+	c.ShouldBindJSON(&input)
 
 	err := h.service.SendMessage(
 		input.MatchID,
@@ -59,7 +55,7 @@ func (h *MessageHandler) SendMessage(c *gin.Context) {
 	)
 
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed"})
+		c.JSON(403, gin.H{"error": "no access"})
 		return
 	}
 
