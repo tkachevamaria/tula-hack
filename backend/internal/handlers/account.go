@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/tkachevamaria/tula-hack/backend/internal/service"
 )
@@ -66,4 +68,21 @@ func (h *AccountHandler) UpdateMe(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"message": "updated"})
+}
+
+func (h *AccountHandler) GetUserByID(c *gin.Context) {
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(400, gin.H{"error": "invalid id"})
+		return
+	}
+
+	user, err := h.service.GetUserByID(id)
+	if err != nil {
+		c.JSON(404, gin.H{"error": "user not found"})
+		return
+	}
+
+	c.JSON(200, user)
 }
