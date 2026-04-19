@@ -20,7 +20,15 @@ export class Navigation {
         const navBtns = document.querySelectorAll('.nav-btn');
         
         navBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
+            // Удаляем старые обработчики
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+        });
+        
+        // Добавляем новые
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
                 const pageName = btn.dataset.page;
                 this.switchPage(pageName);
             });
@@ -28,30 +36,34 @@ export class Navigation {
     }
     
     switchPage(pageName) {
-        // Update nav buttons
+        if (!pageName) return;
+        
+        this.currentPage = pageName;
+        
+        // Обновляем кнопки
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.page === pageName);
         });
         
-        // Hide all pages
+        // Скрываем все страницы
         Object.values(this.pages).forEach(page => {
             if (page) page.classList.remove('active');
         });
         
-        // Show selected page
-        if (this.pages[pageName]) {
-            this.pages[pageName].classList.add('active');
+        // Показываем выбранную
+        const activePage = this.pages[pageName];
+        if (activePage) {
+            activePage.classList.add('active');
         }
         
-        this.currentPage = pageName;
-        
+        // Вызываем колбэк
         if (this.onPageChange) {
             this.onPageChange(pageName);
         }
     }
     
     renderChatsPage() {
-        const chatsPage = document.getElementById('chats-page');
+        const chatsPage = this.pages.chats;
         if (!chatsPage) return;
         
         chatsPage.innerHTML = `

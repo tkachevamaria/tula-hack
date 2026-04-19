@@ -37,13 +37,17 @@ class App {
     initPages() {
         this.createPages();
         this.authPage = new AuthPage(() => this.onAuthSuccess());
-        this.navigation = new Navigation((pageName) => this.switchPage(pageName));
+        this.createNavigation();
     }
     
     createPages() {
         this.pages.feed = new FeedPage();
         this.pages.profile = new ProfilePage();
         this.pages.addPet = new AddPetPage();
+    }
+    
+    createNavigation() {
+        this.navigation = new Navigation((pageName) => this.onPageChange(pageName));
     }
 
     setupGlobalCallbacks() {
@@ -77,35 +81,45 @@ class App {
                 break;
             case 'app':
                 if (this.appScreen) this.appScreen.classList.add('active');
-                // ВСЕГДА переходим на ленту при открытии приложения
-                this.switchPage('feed');
+                // Переключаем на ленту через навигацию
+                if (this.navigation) {
+                    this.navigation.switchPage('feed');
+                }
                 break;
         }
         
         this.currentScreen = screenName;
     }
     
-    switchPage(pageName) {
+    onPageChange(pageName) {
         this.currentPage = pageName;
         
-        // Обновляем активную кнопку в навигации
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.page === pageName);
-        });
-        
-        // Если перешли на профиль — загружаем данные
+        // Загружаем данные профиля при переходе на него
         if (pageName === 'profile' && this.pages.profile) {
             this.pages.profile.load();
         }
     }
     
     onAuthSuccess() {
-        // Пересоздаём страницы, чтобы сбросить кэш старых данных
+        // Очищаем контейнеры страниц перед пересозданием
+        ['feed-page', 'add-pet-page', 'profile-page'].forEach(id => {
+            const page = document.getElementById(id);
+            if (page) page.innerHTML = '';
+        });
+        
+        // Пересоздаём страницы
         this.createPages();
+        
+        // Обновляем callback
         this.setupGlobalCallbacks();
+        
+        // Показываем приложение
         this.showScreen('app');
-        // Принудительно переходим на ленту
-        this.switchPage('feed');
+        
+        // Принудительно переключаем на ленту
+        if (this.navigation) {
+            this.navigation.switchPage('feed');
+        }
     }
 }
 
