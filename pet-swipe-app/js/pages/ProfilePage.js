@@ -1,11 +1,10 @@
-import { accountAPI, petsAPI } from '../api.js';
 import { AuthManager } from '../auth.js';
+import { accountAPI } from '../api.js';
 
 export class ProfilePage {
     constructor() {
         this.container = document.getElementById('profile-page');
-        this.isEditing = false;
-        this.adoptionMode = 'open'; // по умолчанию
+        this.myPets = [];
         this.render();
     }
     
@@ -15,377 +14,202 @@ export class ProfilePage {
         this.container.innerHTML = `
             <div class="page-header">
                 <h2>Профиль</h2>
-                <button id="edit-profile-btn" class="btn-icon">✏️</button>
+                <button id="logout-btn" class="btn-icon">🚪</button>
             </div>
             
-            <div id="profile-view-mode" class="profile-container">
-                <div class="profile-header">
-                    <div class="profile-photo-section">
-                        <div class="profile-photo-placeholder" id="profile-photo-preview">
-                            <span>👤</span>
-                            <p>Загрузить фото</p>
-                        </div>
-                        <input type="file" id="profile-photo" accept="image/*" style="display: none;">
+            <div class="profile-container">
+                <div class="profile-card">
+                    <div class="profile-avatar">
+                        <span>👤</span>
                     </div>
-                    <div id="profile-info-display" class="profile-info-display"></div>
+                    <div class="profile-info">
+                        <div class="profile-field">
+                            <label>Имя</label>
+                            <span id="profile-name">Загрузка...</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Email</label>
+                            <span id="profile-email">—</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Роль</label>
+                            <span id="profile-role">—</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>О себе</label>
+                            <span id="profile-bio">—</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Город</label>
+                            <span id="profile-location">—</span>
+                        </div>
+                    </div>
+                    <button id="edit-profile-btn" class="btn-secondary">Редактировать</button>
                 </div>
                 
-                <div class="profile-pets-section">
-                    <div class="profile-pets-header">
+                <div class="my-pets-section">
+                    <div class="section-header">
                         <h3>Мои питомцы</h3>
-                        <div class="adoption-mode-switch">
-                            <span>Режим:</span>
-                            <button id="adoption-open-btn" class="mode-btn ${this.adoptionMode === 'open' ? 'active' : ''}">Открытый</button>
-                            <button id="adoption-strict-btn" class="mode-btn ${this.adoptionMode === 'strict' ? 'active' : ''}">Строгий</button>
-                        </div>
+                        <button id="add-pet-btn" class="btn-primary">➕ Добавить</button>
                     </div>
-                    <div id="my-pets-list" class="my-pets-grid"></div>
-                </div>
-                
-                <button id="logout-btn" class="btn-secondary">Выйти</button>
-            </div>
-            
-            <div id="profile-edit-mode" class="profile-container" style="display: none;">
-                <div class="profile-edit-header">
-                    <div class="profile-photo-section">
-                        <div class="profile-photo-placeholder" id="profile-photo-preview-edit">
-                            <span>👤</span>
-                            <p>Загрузить фото</p>
-                        </div>
+                    <div id="my-pets-list" class="my-pets-list">
+                        <p class="loading-text">Загрузка питомцев...</p>
                     </div>
                 </div>
-                
-                <form id="profile-form">
-                    <div id="profile-fields"></div>
-                    <div class="form-actions">
-                        <button type="button" id="cancel-edit-btn" class="btn-secondary">Отмена</button>
-                        <button type="submit" class="btn-primary">Сохранить</button>
-                    </div>
-                </form>
-                <div id="profile-form-message" class="form-message"></div>
             </div>
         `;
         
         this.bindEvents();
+        this.loadProfile();
+        this.loadMyPets();
     }
     
     bindEvents() {
-        const editBtn = document.getElementById('edit-profile-btn');
-        const cancelBtn = document.getElementById('cancel-edit-btn');
-        const profileForm = document.getElementById('profile-form');
         const logoutBtn = document.getElementById('logout-btn');
-        
-        if (editBtn) editBtn.addEventListener('click', () => this.toggleEdit(true));
-        if (cancelBtn) cancelBtn.addEventListener('click', () => this.toggleEdit(false));
-        if (profileForm) profileForm.addEventListener('submit', (e) => this.handleUpdate(e));
-        if (logoutBtn) logoutBtn.addEventListener('click', () => this.handleLogout());
-        
-        const photoPlaceholder = document.getElementById('profile-photo-preview');
-        const photoInput = document.getElementById('profile-photo');
-        if (photoPlaceholder && photoInput) {
-            photoPlaceholder.addEventListener('click', () => photoInput.click());
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => this.logout());
         }
         
-        // Переключатели режима
-        const openBtn = document.getElementById('adoption-open-btn');
-        const strictBtn = document.getElementById('adoption-strict-btn');
-        
-        if (openBtn) {
-            openBtn.addEventListener('click', () => this.switchAdoptionMode('open'));
+        const editBtn = document.getElementById('edit-profile-btn');
+        if (editBtn) {
+            editBtn.addEventListener('click', () => this.showEditProfileModal());
         }
-        if (strictBtn) {
-            strictBtn.addEventListener('click', () => this.switchAdoptionMode('strict'));
+        
+        const addPetBtn = document.getElementById('add-pet-btn');
+        if (addPetBtn) {
+            addPetBtn.addEventListener('click', () => {
+                // Переключение на страницу добавления питомца
+                document.querySelector('[data-page="add-pet"]')?.click();
+            });
         }
-    }
-    
-    switchAdoptionMode(mode) {
-        this.adoptionMode = mode;
-        
-        const openBtn = document.getElementById('adoption-open-btn');
-        const strictBtn = document.getElementById('adoption-strict-btn');
-        
-        if (openBtn) openBtn.classList.toggle('active', mode === 'open');
-        if (strictBtn) strictBtn.classList.toggle('active', mode === 'strict');
-        
-        // Здесь можно сохранить режим для всех питомцев или глобально
-        console.log('Adoption mode switched to:', mode);
-    }
-    
-    async load() {
-        await this.loadProfile();
-        await this.loadMyPets();
     }
     
     async loadProfile() {
+        const userId = AuthManager.getUserId();
+        if (!userId) return;
+        
         try {
-            const profile = await accountAPI.getMe();
-            AuthManager.setUser({ user_id: profile.id || profile.ID, user: profile });
-            this.renderProfileInfo(profile);
-            this.renderProfileForm(profile);
+            const user = await accountAPI.getMe();
+            this.updateProfileUI(user);
         } catch (error) {
             console.error('Failed to load profile:', error);
         }
     }
     
-    renderProfileInfo(profile) {
-        const container = document.getElementById('profile-info-display');
-        if (!container) return;
+    updateProfileUI(user) {
+        const nameEl = document.getElementById('profile-name');
+        const emailEl = document.getElementById('profile-email');
+        const roleEl = document.getElementById('profile-role');
+        const bioEl = document.getElementById('profile-bio');
+        const locationEl = document.getElementById('profile-location');
         
-        const role = profile.role || profile.Role || AuthManager.getUserRole();
-        const displayName = profile.display_name || profile.DisplayName || '—';
-        const location = profile.location || profile.Location || '—';
-        const bio = profile.bio || profile.Bio || '—';
-        
-        let html = '';
-        
-        if (role === 'user') {
-            const nameParts = displayName.split(' ');
-            const firstName = nameParts[0] || '—';
-            const lastName = nameParts.slice(1).join(' ') || '—';
-            
-            html = `
-                <div class="profile-info-row"><span class="profile-info-label">Имя:</span> <span class="profile-info-value">${firstName}</span></div>
-                <div class="profile-info-row"><span class="profile-info-label">Фамилия:</span> <span class="profile-info-value">${lastName}</span></div>
-                <div class="profile-info-row"><span class="profile-info-label">Город:</span> <span class="profile-info-value">${location}</span></div>
-                <div class="profile-info-row"><span class="profile-info-label">О себе:</span> <span class="profile-info-value">${bio}</span></div>
-            `;
-        } else {
-            html = `
-                <div class="profile-info-row"><span class="profile-info-label">Название:</span> <span class="profile-info-value">${displayName}</span></div>
-                <div class="profile-info-row"><span class="profile-info-label">Город и адрес:</span> <span class="profile-info-value">${location}</span></div>
-                <div class="profile-info-row"><span class="profile-info-label">Описание:</span> <span class="profile-info-value">${bio}</span></div>
-            `;
-        }
-        
-        container.innerHTML = html;
-    }
-    
-    renderProfileForm(profile) {
-        const container = document.getElementById('profile-fields');
-        if (!container) return;
-        
-        const role = profile.role || profile.Role || AuthManager.getUserRole();
-        const displayName = profile.display_name || profile.DisplayName || '';
-        const location = profile.location || profile.Location || '';
-        const bio = profile.bio || profile.Bio || '';
-        
-        let html = '';
-        
-        if (role === 'user') {
-            const nameParts = displayName.split(' ');
-            const firstName = nameParts[0] || '';
-            const lastName = nameParts.slice(1).join(' ') || '';
-            
-            html = `
-                <div class="form-group">
-                    <label for="edit-first-name">Имя</label>
-                    <input type="text" id="edit-first-name" value="${firstName}" placeholder="Введите имя">
-                </div>
-                <div class="form-group">
-                    <label for="edit-last-name">Фамилия</label>
-                    <input type="text" id="edit-last-name" value="${lastName}" placeholder="Введите фамилию">
-                </div>
-                <div class="form-group">
-                    <label for="edit-location">Город</label>
-                    <input type="text" id="edit-location" value="${location}" placeholder="Введите город">
-                </div>
-                <div class="form-group">
-                    <label for="edit-bio">О себе</label>
-                    <textarea id="edit-bio" rows="3" placeholder="Расскажите о себе">${bio}</textarea>
-                </div>
-            `;
-        } else {
-            html = `
-                <div class="form-group">
-                    <label for="edit-display-name">Название организации</label>
-                    <input type="text" id="edit-display-name" value="${displayName}" placeholder="Введите название">
-                </div>
-                <div class="form-group">
-                    <label for="edit-location">Город и точный адрес</label>
-                    <input type="text" id="edit-location" value="${location}" placeholder="Введите город и адрес">
-                </div>
-                <div class="form-group">
-                    <label for="edit-bio">Описание</label>
-                    <textarea id="edit-bio" rows="3" placeholder="Опишите вашу организацию">${bio}</textarea>
-                </div>
-            `;
-        }
-        
-        container.innerHTML = html;
-    }
-    
-    toggleEdit(edit) {
-        this.isEditing = edit;
-        
-        const viewMode = document.getElementById('profile-view-mode');
-        const editMode = document.getElementById('profile-edit-mode');
-        
-        if (viewMode) viewMode.style.display = edit ? 'none' : 'block';
-        if (editMode) editMode.style.display = edit ? 'block' : 'none';
-        
-        const msgEl = document.getElementById('profile-form-message');
-        if (msgEl) msgEl.textContent = '';
-    }
-    
-    async handleUpdate(e) {
-        e.preventDefault();
-        
-        const role = AuthManager.getUserRole();
-        let displayName, location, bio;
-        
-        if (role === 'user') {
-            const firstName = document.getElementById('edit-first-name')?.value.trim() || '';
-            const lastName = document.getElementById('edit-last-name')?.value.trim() || '';
-            displayName = `${firstName} ${lastName}`.trim();
-            location = document.getElementById('edit-location')?.value.trim() || '';
-            bio = document.getElementById('edit-bio')?.value.trim() || '';
-        } else {
-            displayName = document.getElementById('edit-display-name')?.value.trim() || '';
-            location = document.getElementById('edit-location')?.value.trim() || '';
-            bio = document.getElementById('edit-bio')?.value.trim() || '';
-        }
-        
-        try {
-            await accountAPI.updateMe({
-                display_name: displayName,
-                location: location,
-                bio: bio
-            });
-            
-            this.showMessage('Профиль обновлён', 'success');
-            await this.loadProfile();
-            
-            setTimeout(() => this.toggleEdit(false), 1000);
-            
-        } catch (error) {
-            this.showMessage(`Ошибка: ${error.message}`, 'error');
-        }
-    }
-    
-    showMessage(text, type) {
-        const msgEl = document.getElementById('profile-form-message');
-        if (msgEl) {
-            msgEl.textContent = text;
-            msgEl.className = `form-message ${type}`;
-        }
+        if (nameEl) nameEl.textContent = user.display_name || 'Не указано';
+        if (emailEl) emailEl.textContent = user.email || '—';
+        if (roleEl) roleEl.textContent = user.role === 'shelter' ? 'Приют' : 'Пользователь';
+        if (bioEl) bioEl.textContent = user.bio || '—';
+        if (locationEl) locationEl.textContent = user.location || '—';
     }
     
     async loadMyPets() {
-        const container = document.getElementById('my-pets-list');
-        if (!container) return;
+        const userId = AuthManager.getUserId();
+        if (!userId) return;
         
         try {
-            const data = await petsAPI.getMyPets();
-            console.log('Получены питомцы:', data);
-            
-            const pets = Array.isArray(data) ? data : (data.pets || []);
-            
-            if (pets.length === 0) {
-                container.innerHTML = '<div class="empty-pets-message">У вас пока нет питомцев</div>';
-                return;
-            }
-            
-            container.innerHTML = pets.map(pet => {
-                const petId = pet.ID;
-                const petName = pet.Name || 'Без имени';
-                const petType = pet.Type || 'other';
-                const petBreed = pet.Breed || '';
-                const petAge = pet.Age;
-                
-                return `
-                    <div class="my-pet-card" data-pet-id="${petId}">
-                        <div class="my-pet-photo">${petType === 'dog' ? '🐕' : petType === 'cat' ? '🐈' : '🐾'}</div>
-                        <div class="my-pet-info">
-                            <h4>${petName}</h4>
-                            <p>${petBreed || petType || ''} ${petAge ? petAge + ' ' + this.getAgeSuffix(petAge) : ''}</p>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            container.querySelectorAll('.my-pet-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    const petId = card.dataset.petId;
-                    this.showPetModal(petId);
-                });
+            const response = await fetch('http://localhost:8080/my-pets', {
+                headers: { 'X-User-ID': userId }
             });
             
+            if (!response.ok) {
+                throw new Error('Failed to load my pets');
+            }
+            
+            const pets = await response.json();
+            
+            // Для каждого питомца получаем фото через отдельный запрос
+            const petsWithPhotos = await Promise.all(pets.map(async (pet) => {
+                try {
+                    const photoResp = await fetch(`http://localhost:8080/pets/${pet.ID || pet.id}`, {
+                        headers: { 'X-User-ID': userId }
+                    });
+                    if (photoResp.ok) {
+                        const data = await photoResp.json();
+                        return {
+                            ...pet,
+                            photos: data.photos || []
+                        };
+                    }
+                } catch (e) {
+                    console.warn('Failed to fetch photos for pet', pet.ID, e);
+                }
+                return { ...pet, photos: [] };
+            }));
+            
+            this.myPets = petsWithPhotos;
+            this.renderMyPets();
         } catch (error) {
-            console.error('Ошибка загрузки питомцев:', error);
-            container.innerHTML = '<div class="empty-pets-message">Не удалось загрузить питомцев</div>';
+            console.error('Failed to load my pets:', error);
+            const listEl = document.getElementById('my-pets-list');
+            if (listEl) listEl.innerHTML = '<p class="error-text">Не удалось загрузить питомцев</p>';
         }
     }
     
-    async showPetModal(petId) {
-        if (!petId) return;
+    renderMyPets() {
+        const listEl = document.getElementById('my-pets-list');
+        if (!listEl) return;
         
-        try {
-            const pet = await petsAPI.getPet(petId);
+        if (this.myPets.length === 0) {
+            listEl.innerHTML = '<p class="empty-text">У вас пока нет питомцев</p>';
+            return;
+        }
+        
+        const html = this.myPets.map(pet => {
+            const petId = pet.ID || pet.id;
+            const petName = pet.Name || pet.name || 'Без имени';
+            const petType = pet.Type || pet.type;
+            const petBreed = pet.Breed || pet.breed || '';
+            const petAge = pet.Age || pet.age;
+            const photos = pet.photos || [];
             
-            const petData = {
-                id: pet.ID || pet.id,
-                name: pet.Name || pet.name || 'Без имени',
-                type: pet.Type || pet.type || 'other',
-                breed: pet.Breed || pet.breed,
-                age: pet.Age || pet.age,
-                description: pet.Description || pet.description,
-                status: pet.Status || pet.status || 'available'
-            };
+            let photoHtml = '';
+            if (photos.length > 0) {
+                photoHtml = `<img src="${photos[0]}" alt="${petName}" style="width:100%; height:100%; object-fit:cover;">`;
+            } else {
+                photoHtml = petType === 'dog' ? '🐕' : petType === 'cat' ? '🐈' : '🐾';
+            }
             
-            const modal = document.createElement('div');
-            modal.className = 'pet-modal-overlay';
-            modal.innerHTML = `
-                <div class="pet-modal">
-                    <button class="pet-modal-close">&times;</button>
-                    <div class="pet-modal-header">
-                        <div class="pet-modal-photo">
-                            ${petData.type === 'dog' ? '🐕' : petData.type === 'cat' ? '🐈' : '🐾'}
-                        </div>
-                        <div class="pet-modal-title">
-                            <h2>${petData.name}</h2>
-                            <p class="pet-modal-type">${this.getPetTypeText(petData.type)}</p>
-                        </div>
+            return `
+                <div class="pet-card" data-pet-id="${petId}">
+                    <div class="pet-card-photo">
+                        ${photoHtml}
                     </div>
-                    <div class="pet-modal-info">
-                        <div class="pet-info-row">
-                            <span class="pet-info-label">Порода:</span>
-                            <span class="pet-info-value">${petData.breed || 'Не указана'}</span>
-                        </div>
-                        <div class="pet-info-row">
-                            <span class="pet-info-label">Возраст:</span>
-                            <span class="pet-info-value">${petData.age ? petData.age + ' ' + this.getAgeSuffix(petData.age) : 'Не указан'}</span>
-                        </div>
-                        <div class="pet-info-row pet-info-description">
-                            <span class="pet-info-label">Описание:</span>
-                            <span class="pet-info-value">${petData.description || 'Нет описания'}</span>
-                        </div>
-                        <div class="pet-info-row">
-                            <span class="pet-info-label">Статус:</span>
-                            <span class="pet-info-value">${petData.status === 'available' ? 'Доступен' : 'Недоступен'}</span>
-                        </div>
+                    <div class="pet-card-info">
+                        <h4>${petName}</h4>
+                        <p>${petBreed} ${petAge ? '• ' + petAge + ' ' + this.getAgeSuffix(petAge) : ''}</p>
+                    </div>
+                    <div class="pet-card-actions">
+                        <button class="btn-icon edit-pet" data-id="${petId}">✏️</button>
+                        <button class="btn-icon delete-pet" data-id="${petId}">🗑️</button>
                     </div>
                 </div>
             `;
-            
-            document.body.appendChild(modal);
-            
-            modal.querySelector('.pet-modal-close').addEventListener('click', () => modal.remove());
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) modal.remove();
+        }).join('');
+        
+        listEl.innerHTML = html;
+        
+        // Привязываем события для кнопок редактирования/удаления
+        listEl.querySelectorAll('.edit-pet').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const petId = e.currentTarget.dataset.id;
+                this.editPet(petId);
             });
-            
-        } catch (error) {
-            console.error('Ошибка загрузки питомца:', error);
-        }
-    }
-    
-    getPetTypeText(type) {
-        switch(type) {
-            case 'dog': return 'Собака';
-            case 'cat': return 'Кошка';
-            case 'other': return 'Другое';
-            default: return type || 'Не указан';
-        }
+        });
+        
+        listEl.querySelectorAll('.delete-pet').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const petId = e.currentTarget.dataset.id;
+                this.deletePet(petId);
+            });
+        });
     }
     
     getAgeSuffix(age) {
@@ -394,9 +218,111 @@ export class ProfilePage {
         return 'лет';
     }
     
-    handleLogout() {
+    editPet(petId) {
+        // TODO: реализовать редактирование питомца
+        console.log('Edit pet', petId);
+    }
+    
+    async deletePet(petId) {
+        if (!confirm('Удалить питомца?')) return;
+        
+        try {
+            const userId = AuthManager.getUserId();
+            const response = await fetch(`http://localhost:8080/pets/${petId}`, {
+                method: 'DELETE',
+                headers: { 'X-User-ID': userId }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Delete failed');
+            }
+            
+            // Обновляем список
+            await this.loadMyPets();
+            
+            // Также обновляем callback для других страниц
+            if (window.updatePetsCallback) {
+                await window.updatePetsCallback();
+            }
+        } catch (error) {
+            console.error('Failed to delete pet:', error);
+            alert('Не удалось удалить питомца');
+        }
+    }
+    
+    async showEditProfileModal() {
+        const userId = AuthManager.getUserId();
+        let user;
+        try {
+            user = await accountAPI.getMe();
+        } catch (error) {
+            console.error('Failed to load profile for editing:', error);
+            return;
+        }
+        
+        const modal = document.createElement('div');
+        modal.className = 'pet-modal-overlay';
+        modal.innerHTML = `
+            <div class="filter-modal">
+                <div class="filter-modal-header">
+                    <h2>Редактировать профиль</h2>
+                    <button class="filter-modal-close">&times;</button>
+                </div>
+                
+                <div class="filter-modal-body">
+                    <div class="form-group">
+                        <label for="edit-display-name">Имя</label>
+                        <input type="text" id="edit-display-name" value="${user.display_name || ''}" placeholder="Ваше имя">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-bio">О себе</label>
+                        <textarea id="edit-bio" rows="3" placeholder="Расскажите о себе">${user.bio || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-location">Город</label>
+                        <input type="text" id="edit-location" value="${user.location || ''}" placeholder="Ваш город">
+                    </div>
+                </div>
+                
+                <div class="filter-modal-footer">
+                    <button id="cancel-edit" class="btn-secondary">Отмена</button>
+                    <button id="save-profile" class="btn-primary">Сохранить</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        modal.querySelector('.filter-modal-close').addEventListener('click', () => modal.remove());
+        modal.querySelector('#cancel-edit').addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+        
+        modal.querySelector('#save-profile').addEventListener('click', async () => {
+            const displayName = document.getElementById('edit-display-name').value.trim();
+            const bio = document.getElementById('edit-bio').value.trim();
+            const location = document.getElementById('edit-location').value.trim();
+            
+            try {
+                await accountAPI.updateMe({ display_name: displayName, bio, location });
+                await this.loadProfile();
+                modal.remove();
+            } catch (error) {
+                console.error('Failed to update profile:', error);
+                alert('Не удалось обновить профиль');
+            }
+        });
+    }
+    
+    logout() {
         AuthManager.logout();
-        document.getElementById('app-screen').classList.remove('active');
-        document.getElementById('welcome-screen').classList.add('active');
+        window.location.reload();
+    }
+    
+    // Этот метод вызывается извне при переключении на страницу профиля
+    async load() {
+        await this.loadProfile();
+        await this.loadMyPets();
     }
 }
