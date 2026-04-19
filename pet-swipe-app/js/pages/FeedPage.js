@@ -1,6 +1,5 @@
-import { petsAPI, swipesAPI, matchesAPI } from '../api.js';
-import { AuthManager } from '../auth.js';
 import { petsAPI, swipesAPI, preferencesAPI } from '../api.js';
+import { AuthManager } from '../auth.js';
 
 export class FeedPage {
     constructor() {
@@ -49,9 +48,40 @@ export class FeedPage {
     }
     
     async loadFeed() {
+        const userId = sessionStorage.getItem('user_id');
+        if (!userId) {
+            console.log('Пользователь не авторизован, пропускаем загрузку фида');
+            return;
+        }
+        
         try {
             const data = await petsAPI.getFeed();
-            this.pets = Array.isArray(data) ? data : (data.pets || []);
+            console.log('Raw feed data:', data);
+            
+            let pets = [];
+            
+            if (Array.isArray(data)) {
+                // Для каждого элемента достаём pet
+                pets = data.map(item => item.pet || item);
+            } else if (data && data.pets) {
+                pets = data.pets;
+            } else if (data) {
+                pets = [data];
+            }
+            
+            // Маппим поля на единый формат
+            this.pets = pets.map(p => ({
+                ID: p.ID || p.id,
+                OwnerID: p.OwnerID || p.owner_id,
+                Name: p.Name || p.name,
+                Type: p.Type || p.type,
+                Breed: p.Breed || p.breed,
+                Age: p.Age || p.age,
+                Description: p.Description || p.description,
+                AdoptionMode: p.AdoptionMode || p.adoption_mode || 'strict'
+            }));
+            
+            console.log('Mapped pets:', this.pets);
             
             if (this.pets.length === 0) {
                 this.showEmptyMessage();
@@ -112,7 +142,9 @@ export class FeedPage {
         const petAge = pet.Age;
         const petBreed = pet.Breed || pet.Type || '';
         const ownerName = owner.displayName;
-        const ownerId = owner.id;
+        const ownerId = owner.id || pet.OwnerID || '';
+
+        console.log('Creating card with ownerId:', ownerId);
         
         return `
             <div class="swipe-card" data-pet-id="${pet.ID}">
@@ -265,6 +297,13 @@ export class FeedPage {
         if (!pet) return;
         
         const petId = pet.ID || pet.id;
+        console.log('Swiping pet:', petId, isLike); // ← отладка
+        
+        if (!petId) {
+            console.error('Pet ID is undefined');
+            this.nextCard();
+            return;
+        }
         
         try {
             const response = await swipesAPI.swipe(petId, isLike);
@@ -277,10 +316,8 @@ export class FeedPage {
             } else if (isLike && pet.AdoptionMode === 'open') {
                 this.showDirectChatModal(pet);
             }
-            
         } catch (error) {
             console.error('Swipe error:', error);
-            // Всё равно переходим к следующей карточке
             this.nextCard();
         }
     }
@@ -369,6 +406,10 @@ export class FeedPage {
     }
     
     async showOwnerProfile(ownerId) {
+        if (!ownerId) {
+            console.error('ownerId is undefined');
+            return;
+        }
         try {
             // Получаем питомцев владельца
             const response = await fetch(`http://localhost:8080/users/${ownerId}/pets`, {
