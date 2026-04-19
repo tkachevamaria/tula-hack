@@ -598,12 +598,20 @@ export class FeedPage {
     }
 
     async savePreferences(prefs) {
-        try {
-            await preferencesAPI.set(prefs);
-            console.log('Preferences saved:', prefs);
-        } catch (error) {
-            console.error('Failed to save preferences:', error);
-        }
+        const cleanPrefs = {
+            preferred_type: prefs.preferred_type || '',
+            min_age: prefs.min_age || 0,
+            max_age: prefs.max_age || 0,
+            preferred_breed: prefs.preferred_breed || '',
+            preferred_location: prefs.preferred_location || ''
+        };
+        
+        // Сохраняем только в localStorage
+        localStorage.setItem('pet-preferences', JSON.stringify(cleanPrefs));
+        console.log('Preferences saved locally:', cleanPrefs);
+        
+        // Пробуем бэк, но не ждём и не показываем ошибки
+        preferencesAPI.set(cleanPrefs).catch(() => {});
     }
     
     getPetTypeText(type) {
