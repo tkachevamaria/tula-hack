@@ -104,7 +104,15 @@ export class FeedPage {
         const ownerName = owner.displayName;
         const ownerId = owner.id || pet.OwnerID || '';
 
-        console.log('Creating card with ownerId:', ownerId);
+        // Определяем содержимое фото
+        let photoContent = '';
+        if (pet.Photos && pet.Photos.length > 0) {
+            // Используем первую фотографию
+            photoContent = `<img src="${pet.Photos[0]}" alt="${petName}" style="width:100%; height:100%; object-fit:cover;">`;
+        } else {
+            // Заглушка эмодзи
+            photoContent = pet.Type === 'dog' ? '🐕' : pet.Type === 'cat' ? '🐈' : '🐾';
+        }
         
         return `
             <div class="swipe-card" data-pet-id="${pet.ID}">
@@ -114,7 +122,7 @@ export class FeedPage {
                 </div>
                 
                 <div class="swipe-card-photo">
-                    ${pet.Type === 'dog' ? '🐕' : pet.Type === 'cat' ? '🐈' : '🐾'}
+                    ${photoContent}
                 </div>
                 
                 <div class="swipe-card-info">
@@ -183,6 +191,8 @@ export class FeedPage {
                 card.classList.remove('liking', 'disliking');
             }
         };
+
+        
         
         const onEnd = () => {
             if (!isDragging) return;
@@ -213,6 +223,8 @@ export class FeedPage {
         card.addEventListener('touchmove', onMove, { passive: false });
         card.addEventListener('touchend', onEnd);
     }
+
+    
     
     animateSwipe(direction) {
         const card = document.querySelector('.swipe-card');
@@ -257,7 +269,7 @@ export class FeedPage {
         if (!pet) return;
         
         const petId = pet.ID || pet.id;
-        console.log('Swiping pet:', petId, isLike); // ← отладка
+        console.log('Swiping pet:', petId, isLike);
         
         if (!petId) {
             console.error('Pet ID is undefined');
@@ -323,8 +335,16 @@ export class FeedPage {
             breed: pet.Breed || pet.breed,
             age: pet.Age || pet.age,
             description: pet.Description || pet.description,
-            status: pet.Status || pet.status || 'available'
+            status: pet.Status || pet.status || 'available',
+            photos: pet.Photos || []
         };
+        
+        let photoHtml = '';
+        if (petData.photos && petData.photos.length > 0) {
+            photoHtml = `<img src="${petData.photos[0]}" alt="${petData.name}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`;
+        } else {
+            photoHtml = petData.type === 'dog' ? '🐕' : petData.type === 'cat' ? '🐈' : '🐾';
+        }
         
         const modal = document.createElement('div');
         modal.className = 'pet-modal-overlay';
@@ -333,7 +353,7 @@ export class FeedPage {
                 <button class="pet-modal-close">&times;</button>
                 <div class="pet-modal-header">
                     <div class="pet-modal-photo">
-                        ${petData.type === 'dog' ? '🐕' : petData.type === 'cat' ? '🐈' : '🐾'}
+                        ${photoHtml}
                     </div>
                     <div class="pet-modal-title">
                         <h2>${petData.name}</h2>
