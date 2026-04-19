@@ -166,3 +166,51 @@
         align-items: center;
     }
 }
+
+.profile-pets-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.profile-pets-header h3 {
+    margin: 0;
+}
+
+.adoption-mode-switch {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--accent-beige);
+    padding: 0.25rem;
+    border-radius: 30px;
+}
+
+.adoption-mode-switch span {
+    padding-left: 0.5rem;
+    color: var(--secondary-gray);
+    font-size: 0.8rem;
+}
+
+.mode-btn {
+    padding: 0.4rem 0.8rem;
+    border: none;
+    background: transparent;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--secondary-gray);
+    transition: all 0.2s;
+}
+
+.mode-btn.active {
+    background: var(--primary-dark);
+    color: var(--white);
+}
+
+.mode-btn:hover:not(.active) {
+    background: var(--accent-light);
+    color: var(--primary-dark);
+}

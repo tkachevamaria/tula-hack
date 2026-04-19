@@ -5,6 +5,7 @@ export class ProfilePage {
     constructor() {
         this.container = document.getElementById('profile-page');
         this.isEditing = false;
+        this.adoptionMode = 'open'; // по умолчанию
         this.render();
     }
     
@@ -30,7 +31,14 @@ export class ProfilePage {
                 </div>
                 
                 <div class="profile-pets-section">
-                    <h3>Мои питомцы</h3>
+                    <div class="profile-pets-header">
+                        <h3>Мои питомцы</h3>
+                        <div class="adoption-mode-switch">
+                            <span>Режим:</span>
+                            <button id="adoption-open-btn" class="mode-btn ${this.adoptionMode === 'open' ? 'active' : ''}">Открытый</button>
+                            <button id="adoption-strict-btn" class="mode-btn ${this.adoptionMode === 'strict' ? 'active' : ''}">Строгий</button>
+                        </div>
+                    </div>
                     <div id="my-pets-list" class="my-pets-grid"></div>
                 </div>
                 
@@ -77,6 +85,30 @@ export class ProfilePage {
         if (photoPlaceholder && photoInput) {
             photoPlaceholder.addEventListener('click', () => photoInput.click());
         }
+        
+        // Переключатели режима
+        const openBtn = document.getElementById('adoption-open-btn');
+        const strictBtn = document.getElementById('adoption-strict-btn');
+        
+        if (openBtn) {
+            openBtn.addEventListener('click', () => this.switchAdoptionMode('open'));
+        }
+        if (strictBtn) {
+            strictBtn.addEventListener('click', () => this.switchAdoptionMode('strict'));
+        }
+    }
+    
+    switchAdoptionMode(mode) {
+        this.adoptionMode = mode;
+        
+        const openBtn = document.getElementById('adoption-open-btn');
+        const strictBtn = document.getElementById('adoption-strict-btn');
+        
+        if (openBtn) openBtn.classList.toggle('active', mode === 'open');
+        if (strictBtn) strictBtn.classList.toggle('active', mode === 'strict');
+        
+        // Здесь можно сохранить режим для всех питомцев или глобально
+        console.log('Adoption mode switched to:', mode);
     }
     
     async load() {
@@ -285,14 +317,10 @@ export class ProfilePage {
     }
     
     async showPetModal(petId) {
-        if (!petId) {
-            console.error('petId is undefined!');
-            return;
-        }
+        if (!petId) return;
         
         try {
             const pet = await petsAPI.getPet(petId);
-            console.log('Информация о питомце:', pet);
             
             const petData = {
                 id: pet.ID || pet.id,
@@ -348,7 +376,6 @@ export class ProfilePage {
             
         } catch (error) {
             console.error('Ошибка загрузки питомца:', error);
-            alert('Не удалось загрузить информацию о питомце');
         }
     }
     
@@ -368,16 +395,7 @@ export class ProfilePage {
     }
     
     handleLogout() {
-        // Очищаем sessionStorage
         AuthManager.logout();
-        
-        // Дополнительно очищаем всё на всякий случай
-        sessionStorage.clear();
-        
-        // Сбрасываем заголовки API (если есть кэш)
-        console.log('Выход выполнен, sessionStorage очищен');
-        
-        // Переходим на экран приветствия
         document.getElementById('app-screen').classList.remove('active');
         document.getElementById('welcome-screen').classList.add('active');
     }

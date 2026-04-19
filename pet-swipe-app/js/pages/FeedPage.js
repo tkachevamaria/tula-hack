@@ -1,5 +1,6 @@
 import { petsAPI, swipesAPI, matchesAPI } from '../api.js';
 import { AuthManager } from '../auth.js';
+import { petsAPI, swipesAPI, preferencesAPI } from '../api.js';
 
 export class FeedPage {
     constructor() {
@@ -63,7 +64,7 @@ export class FeedPage {
         }
     }
     
-    renderCurrentCard() {
+    async renderCurrentCard() {
         const stack = document.getElementById('swipe-card-stack');
         if (!stack) return;
         
@@ -73,22 +74,49 @@ export class FeedPage {
         }
         
         const pet = this.pets[this.currentIndex];
-        stack.innerHTML = this.createCardHTML(pet);
+        const ownerId = pet.OwnerID;
+        
+        // По умолчанию
+        let ownerName = 'Владелец';
+        
+        // Делаем отдельный запрос за информацией о владельце
+        try {
+            const response = await fetch(`http://localhost:8080/users/${ownerId}/pets`, {
+                headers: { 'X-User-ID': AuthManager.getUserId() }
+            });
+            
+            if (response.ok) {
+                const pets = await response.json();
+                // Имя владельца может быть в первом питомце
+                if (pets.length > 0) {
+                    ownerName = pets[0].OwnerName || pets[0].owner_name || 'Владелец';
+                }
+            }
+        } catch (error) {
+            console.log('Не удалось получить имя владельца:', error);
+        }
+        
+        this.currentOwner = {
+            id: ownerId,
+            displayName: ownerName
+        };
+        
+        stack.innerHTML = this.createCardHTML(pet, this.currentOwner);
         
         this.initDragForCurrentCard();
         this.bindCardEvents(pet);
     }
     
-    createCardHTML(pet) {
-        const petName = pet.Name || pet.name || 'Без имени';
-        const petAge = pet.Age || pet.age;
-        const petBreed = pet.Breed || pet.breed || pet.Type || pet.type || '';
-        const ownerName = pet.OwnerName || pet.owner_name || 'Владелец';
-        const ownerId = pet.OwnerID || pet.owner_id;
+    createCardHTML(pet, owner) {
+        const petName = pet.Name || 'Без имени';
+        const petAge = pet.Age;
+        const petBreed = pet.Breed || pet.Type || '';
+        const ownerName = owner.displayName;
+        const ownerId = owner.id;
         
         return `
-            <div class="swipe-card" data-pet-id="${pet.ID || pet.id}">
-                <div class="swipe-card-owner" data-owner-id="${ownerId}">
+            <div class="swipe-card" data-pet-id="${pet.ID}">
+                <div class="swipe-card-owner" data-owner-id="${ownerId}" data-owner-name="${ownerName}">
                     <span class="owner-avatar">👤</span>
                     <span class="owner-name">${ownerName}</span>
                 </div>
@@ -111,21 +139,19 @@ export class FeedPage {
         const card = document.querySelector('.swipe-card');
         if (!card) return;
         
-        // Клик по карточке — подробная информация
         card.addEventListener('click', (e) => {
-            // Не срабатывает при клике на владельца
             if (!e.target.closest('.swipe-card-owner')) {
                 this.showPetModal(pet);
             }
         });
         
-        // Клик по владельцу
         const ownerEl = card.querySelector('.swipe-card-owner');
         if (ownerEl) {
-            ownerEl.addEventListener('click', (e) => {
+            ownerEl.addEventListener('click', async (e) => {
                 e.stopPropagation();
+                
                 const ownerId = ownerEl.dataset.ownerId;
-                this.showOwnerProfile(ownerId);
+                await this.showOwnerProfile(ownerId);
             });
         }
     }
@@ -242,20 +268,19 @@ export class FeedPage {
         
         try {
             const response = await swipesAPI.swipe(petId, isLike);
+            console.log('Swipe response:', response);
             
-            // Сначала завершаем анимацию и переходим к следующей карточке
             await this.nextCard();
             
-            // Потом показываем мэтч или чат
             if (response.match) {
                 this.showMatchModal(pet);
             } else if (isLike && pet.AdoptionMode === 'open') {
-                // Если adoption_mode = open, сразу предлагаем чат
                 this.showDirectChatModal(pet);
             }
             
         } catch (error) {
             console.error('Swipe error:', error);
+            // Всё равно переходим к следующей карточке
             this.nextCard();
         }
     }
@@ -345,26 +370,16 @@ export class FeedPage {
     
     async showOwnerProfile(ownerId) {
         try {
-            // Получаем профиль владельца
-            const ownerResponse = await fetch(`http://localhost:8080/users/${ownerId}`, {
-                headers: { 'X-User-ID': AuthManager.getUserId() }
-            });
-            const owner = await ownerResponse.json();
-            
             // Получаем питомцев владельца
-            const petsResponse = await fetch(`http://localhost:8080/users/${ownerId}/pets`, {
+            const response = await fetch(`http://localhost:8080/users/${ownerId}/pets`, {
                 headers: { 'X-User-ID': AuthManager.getUserId() }
             });
-            const pets = await petsResponse.json();
             
-            const displayName = owner.DisplayName || owner.display_name || 'Владелец';
-            const location = owner.Location || owner.location || '';
-            const bio = owner.Bio || owner.bio || '';
+            if (!response.ok) {
+                throw new Error('Failed to load owner pets');
+            }
             
-            // Разбиваем имя на имя и фамилию
-            const nameParts = displayName.split(' ');
-            const firstName = nameParts[0] || '';
-            const lastName = nameParts.slice(1).join(' ') || '';
+            const pets = await response.json();
             
             const modal = document.createElement('div');
             modal.className = 'pet-modal-overlay';
@@ -375,22 +390,14 @@ export class FeedPage {
                     <div class="owner-full-header">
                         <div class="owner-avatar-huge">👤</div>
                         <div class="owner-full-title">
-                            <h2>${firstName} ${lastName}</h2>
-                            ${location ? `<p class="owner-location">📍 ${location}</p>` : ''}
+                            <h2>Владелец #${ownerId}</h2>
                         </div>
                     </div>
                     
-                    ${bio ? `
-                        <div class="owner-bio-section">
-                            <h3>О себе</h3>
-                            <p>${bio}</p>
-                        </div>
-                    ` : ''}
-                    
                     <div class="owner-pets-section">
-                        <h3>Питомцы ${firstName}</h3>
+                        <h3>Питомцы владельца</h3>
                         <div class="owner-pets-grid-full">
-                            ${pets.length > 0 ? pets.map(p => `
+                            ${pets && pets.length > 0 ? pets.map(p => `
                                 <div class="owner-pet-card-full">
                                     <div class="owner-pet-photo">${p.Type === 'dog' ? '🐕' : p.Type === 'cat' ? '🐈' : '🐾'}</div>
                                     <h4>${p.Name || 'Без имени'}</h4>
@@ -410,7 +417,8 @@ export class FeedPage {
             });
             
         } catch (error) {
-            console.error('Failed to load owner profile:', error);
+            console.error('Failed to load owner pets:', error);
+            alert('Не удалось загрузить питомцев владельца');
         }
     }
     
@@ -445,7 +453,109 @@ export class FeedPage {
     }
     
     showFilters() {
-        alert('Фильтры будут здесь (в разработке)');
+        this.loadPreferences().then(prefs => {
+            const modal = document.createElement('div');
+            modal.className = 'pet-modal-overlay';
+            modal.innerHTML = `
+                <div class="filter-modal">
+                    <div class="filter-modal-header">
+                        <h2>Фильтры</h2>
+                        <button class="filter-modal-close">&times;</button>
+                    </div>
+                    
+                    <div class="filter-modal-body">
+                        <div class="form-group">
+                            <label for="filter-type">Тип животного</label>
+                            <select id="filter-type">
+                                <option value="">Любой</option>
+                                <option value="dog" ${prefs.preferred_type === 'dog' ? 'selected' : ''}>Собака</option>
+                                <option value="cat" ${prefs.preferred_type === 'cat' ? 'selected' : ''}>Кошка</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label for="filter-age-min">Возраст от</label>
+                                <input type="number" id="filter-age-min" min="0" max="30" 
+                                    value="${prefs.min_age || ''}" placeholder="0">
+                            </div>
+                            <div class="form-group half">
+                                <label for="filter-age-max">Возраст до</label>
+                                <input type="number" id="filter-age-max" min="0" max="30" 
+                                    value="${prefs.max_age || ''}" placeholder="30">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="filter-breed">Порода</label>
+                            <input type="text" id="filter-breed" 
+                                value="${prefs.preferred_breed || ''}" placeholder="Например: Лабрадор">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="filter-location">Город</label>
+                            <input type="text" id="filter-location" 
+                                value="${prefs.preferred_location || ''}" placeholder="Введите город">
+                        </div>
+                    </div>
+                    
+                    <div class="filter-modal-footer">
+                        <button id="filter-reset" class="btn-secondary">Сбросить</button>
+                        <button id="filter-apply" class="btn-primary">Применить</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            modal.querySelector('.filter-modal-close').addEventListener('click', () => modal.remove());
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
+            
+            modal.querySelector('#filter-reset').addEventListener('click', () => {
+                document.getElementById('filter-type').value = '';
+                document.getElementById('filter-age-min').value = '';
+                document.getElementById('filter-age-max').value = '';
+                document.getElementById('filter-breed').value = '';
+                document.getElementById('filter-location').value = '';
+            });
+            
+            modal.querySelector('#filter-apply').addEventListener('click', async () => {
+                const preferences = {
+                    preferred_type: document.getElementById('filter-type').value || null,
+                    min_age: parseInt(document.getElementById('filter-age-min').value) || null,
+                    max_age: parseInt(document.getElementById('filter-age-max').value) || null,
+                    preferred_breed: document.getElementById('filter-breed').value || null,
+                    preferred_location: document.getElementById('filter-location').value || null
+                };
+                
+                await this.savePreferences(preferences);
+                modal.remove();
+                
+                // Перезагружаем ленту
+                this.currentIndex = 0;
+                await this.loadFeed();
+            });
+        });
+    }
+
+    async loadPreferences() {
+        try {
+            const prefs = await preferencesAPI.get();
+            return prefs || {};
+        } catch {
+            return {};
+        }
+    }
+
+    async savePreferences(prefs) {
+        try {
+            await preferencesAPI.set(prefs);
+            console.log('Preferences saved:', prefs);
+        } catch (error) {
+            console.error('Failed to save preferences:', error);
+        }
     }
     
     getPetTypeText(type) {

@@ -617,3 +617,76 @@
         grid-column: span 1;
     }
 }
+
+/* Фильтры */
+.filter-modal {
+    background: var(--white);
+    border-radius: 24px;
+    max-width: 400px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 2px solid var(--accent-beige);
+}
+
+.filter-modal-header h2 {
+    color: var(--primary-dark);
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.filter-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: var(--secondary-gray);
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.filter-modal-close:hover {
+    background: var(--accent-beige);
+    color: var(--primary-dark);
+}
+
+.filter-modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.form-group.half {
+    flex: 1;
+}
+
+.filter-modal-footer {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 2px solid var(--accent-beige);
+}
+
+.filter-modal-footer .btn-secondary,
+.filter-modal-footer .btn-primary {
+    flex: 1;
+}
