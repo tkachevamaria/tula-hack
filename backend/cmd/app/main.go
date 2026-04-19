@@ -67,6 +67,7 @@ func main() {
 	accountHandler := handlers.NewAccountHandler(accountService)
 
 	r.GET("/me", accountHandler.GetMe)
+	r.GET("/users/:id", accountHandler.GetUserByID)
 	r.PUT("/me", accountHandler.UpdateMe)
 
 	// PETS
