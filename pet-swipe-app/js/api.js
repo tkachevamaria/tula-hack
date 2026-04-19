@@ -7,7 +7,7 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     
     const userId = sessionStorage.getItem('user_id');
     console.log('X-User-ID:', userId);
-    
+
     if (userId) {
         headers['X-User-ID'] = userId;
     }
@@ -81,6 +81,12 @@ export const messagesAPI = {
 export const preferencesAPI = {
     get: () => apiRequest('/preferences'),
     set: (data) => apiRequest('/preferences', 'POST', data),
+};
+
+export const accountAPI = {
+    getMe: () => apiRequest('/me'),
+    updateMe: (data) => apiRequest('/me', 'PUT', data),
+    getUser: (userId) => apiRequest(`/users/${userId}`), // ← НОВЫЙ МЕТОД
 };
 
 export { apiRequest };

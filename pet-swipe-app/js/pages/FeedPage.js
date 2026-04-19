@@ -1,5 +1,6 @@
 import { petsAPI, swipesAPI, preferencesAPI } from '../api.js';
 import { AuthManager } from '../auth.js';
+import { petsAPI, swipesAPI, preferencesAPI, accountAPI } from '../api.js';
 
 export class FeedPage {
     constructor() {
@@ -93,6 +94,15 @@ export class FeedPage {
             this.showEmptyMessage();
         }
     }
+
+    async getOwnerName(ownerId) {
+        try {
+            const user = await accountAPI.getUser(ownerId);
+            return user.display_name || 'Владелец';
+        } catch {
+            return 'Владелец';
+        }
+    }
     
     async renderCurrentCard() {
         const stack = document.getElementById('swipe-card-stack');
@@ -106,29 +116,27 @@ export class FeedPage {
         const pet = this.pets[this.currentIndex];
         const ownerId = pet.OwnerID;
         
-        // По умолчанию
+        // Получаем имя владельца через новый эндпоинт
         let ownerName = 'Владелец';
+        let ownerBio = '';
+        let ownerLocation = '';
         
-        // Делаем отдельный запрос за информацией о владельце
         try {
-            const response = await fetch(`http://localhost:8080/users/${ownerId}/pets`, {
-                headers: { 'X-User-ID': AuthManager.getUserId() }
-            });
-            
-            if (response.ok) {
-                const pets = await response.json();
-                // Имя владельца может быть в первом питомце
-                if (pets.length > 0) {
-                    ownerName = pets[0].OwnerName || pets[0].owner_name || 'Владелец';
-                }
+            const owner = await accountAPI.getUser(ownerId);
+            if (owner) {
+                ownerName = owner.display_name || 'Владелец';
+                ownerBio = owner.bio || '';
+                ownerLocation = owner.location || '';
             }
         } catch (error) {
-            console.log('Не удалось получить имя владельца:', error);
+            console.log('Не удалось получить профиль владельца:', error);
         }
         
         this.currentOwner = {
             id: ownerId,
-            displayName: ownerName
+            displayName: ownerName,
+            bio: ownerBio,
+            location: ownerLocation
         };
         
         stack.innerHTML = this.createCardHTML(pet, this.currentOwner);
