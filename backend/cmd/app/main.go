@@ -2,9 +2,13 @@ package main
 
 import (
 	"log"
+	"os"
+
+	"github.com/joho/godotenv"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/tkachevamaria/tula-hack/backend/internal/config"
 	"github.com/tkachevamaria/tula-hack/backend/internal/database"
 	"github.com/tkachevamaria/tula-hack/backend/internal/handlers"
 	"github.com/tkachevamaria/tula-hack/backend/internal/repository"
@@ -28,6 +32,29 @@ func main() {
 	r.POST("/auth/register", authHandler.Register)
 	r.POST("/auth/login", authHandler.Login)
 
+	// UPLOAD
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Ошибка загрузки .env файла")
+	}
+	accessKey := os.Getenv("YANDEX_ACCESS_KEY_ID")
+	secretKey := os.Getenv("YANDEX_SECRET_ACCESS_KEY")
+	if accessKey == "" || secretKey == "" {
+		log.Fatal("missing YANDEX_ACCESS_KEY_ID or YANDEX_SECRET_ACCESS_KEY")
+	}
+	s3Client := config.NewS3Client(accessKey, secretKey)
+	uploadService := service.NewUploadService(s3Client, "pets-photos")
+	uploadHandler := handlers.NewUploadHandler(uploadService)
+
+	r.POST("/upload", uploadHandler.UploadPhoto)
+
+	// PET PHOTOS
+	photoRepo := repository.NewPhotoRepository(db)
+	photoService := service.NewPhotoService(photoRepo)
+	petPhotoHandler := handlers.NewPetPhotoHandler(uploadService, photoService)
+
+	r.POST("/pets/:id/photos", petPhotoHandler.UploadPetPhoto)
+
 	// ACCOUNT
 	accountRepo := repository.NewAccountRepository(db)
 	accountService := service.NewAccountService(accountRepo)
@@ -39,7 +66,7 @@ func main() {
 	// PETS
 	petRepo := repository.NewPetRepository(db)
 	petService := service.NewPetService(petRepo)
-	petHandler := handlers.NewPetHandler(petService)
+	petHandler := handlers.NewPetHandler(petService, photoService)
 
 	r.POST("/pets", petHandler.CreatePet)
 	r.GET("/pets/feed", petHandler.GetFeed)
@@ -65,7 +92,6 @@ func main() {
 	r.POST("/messages", msgHandler.SendMessage)
 
 	// PREFERENCES
-
 	prefRepo := repository.NewPreferencesRepository(db)
 	prefService := service.NewPreferencesService(prefRepo)
 	prefHandler := handlers.NewPreferencesHandler(prefService)
@@ -73,6 +99,7 @@ func main() {
 	r.POST("/preferences", prefHandler.SetPreferences)
 	r.GET("/preferences", prefHandler.GetPreferences)
 
+	// Запуск сервера
 	log.Println("Server started on :8080")
 	r.Run(":8080")
 }
