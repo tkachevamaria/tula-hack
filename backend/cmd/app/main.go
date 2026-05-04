@@ -38,11 +38,8 @@ func main() {
 	r.POST("/auth/register", authHandler.Register)
 	r.POST("/auth/login", authHandler.Login)
 
-	// UPLOAD
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Ошибка загрузки .env файла")
-	}
+	// UPLOAD: .env опционален, если переменные заданы в окружении (например в Docker)
+	_ = godotenv.Load()
 	accessKey := os.Getenv("YANDEX_ACCESS_KEY_ID")
 	secretKey := os.Getenv("YANDEX_SECRET_ACCESS_KEY")
 	if accessKey == "" || secretKey == "" {
