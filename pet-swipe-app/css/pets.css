@@ -60,6 +60,17 @@
     font-size: 0.9rem;
 }
 
+/* Когда фото загружено, убираем border, background и фиксированные размеры */
+.photo-placeholder.has-photo {
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    width: 150px;
+    height: 150px;
+    padding: 0;
+    overflow: hidden;
+}
+
 /* Feed / Swipe */
 .swipe-container {
     display: flex;
@@ -131,6 +142,10 @@
     
     .photo-placeholder span {
         font-size: 2.5rem;
+    }
+    .photo-placeholder.has-photo {
+        width: 120px;
+        height: 120px;
     }
 }
 

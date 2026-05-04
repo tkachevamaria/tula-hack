@@ -86,14 +86,18 @@ export class AddPetPage {
                 if (file) {
                     this.selectedPhotoFile = file;
                     
+                    // Добавляем класс, чтобы убрать border и background
+                    photoPlaceholder.classList.add('has-photo');
+
                     // Показываем превью
                     const reader = new FileReader();
                     reader.onload = (ev) => {
-                        photoPlaceholder.innerHTML = `<img src="${ev.target.result}" style="max-width:100%; max-height:100%; border-radius:8px; object-fit:cover;">`;
+                        photoPlaceholder.innerHTML = `<img src="${ev.target.result}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
                     };
                     reader.readAsDataURL(file);
                 } else {
                     this.selectedPhotoFile = null;
+                    photoPlaceholder.classList.remove('has-photo');
                     photoPlaceholder.innerHTML = `<span>🐾</span><p>Загрузить фото</p>`;
                 }
             });
@@ -150,7 +154,10 @@ export class AddPetPage {
             document.getElementById('add-pet-form').reset();
             this.selectedPhotoFile = null;
             const preview = document.getElementById('pet-photo-preview');
-            if (preview) preview.innerHTML = `<span>🐾</span><p>Загрузить фото</p>`;
+            if (preview){
+                preview.classList.remove('has-photo');
+                preview.innerHTML = `<span>🐾</span><p>Загрузить фото</p>`;
+            }
             
             // Обновляем список питомцев в профиле
             if (window.updatePetsCallback) {
