@@ -557,56 +557,67 @@ export class FeedPage {
     }
 
     async loadFeed() {
-        const userId = sessionStorage.getItem('user_id');
-        if (!userId) {
-            console.log('Пользователь не авторизован, пропускаем загрузку фида');
+    const userId = sessionStorage.getItem('user_id');
+    if (!userId) {
+        console.log('[FeedPage] Пользователь не авторизован, пропускаем загрузку фида');
+        return;
+    }
+    
+    try {
+        const data = await petsAPI.getFeed();
+        console.log('[FeedPage] Raw feed data:', data);
+        
+        if (!data) {
+            this.pets = [];
+            this.showEmptyMessage();
             return;
         }
         
-        try {
-            const data = await petsAPI.getFeed();
-            console.log('Raw feed data:', data);
-            
-            if (!data) {
-                this.pets = [];
-                this.showEmptyMessage();
-                return;
-            }
-            
-            let rawPets = [];
-            
-            if (Array.isArray(data)) {
-                rawPets = data.map(item => item.pet || item);
-            } else if (data.pets) {
-                rawPets = data.pets;
-            } else {
-                rawPets = [data];
-            }
-            
-            this.pets = rawPets.map(p => ({
-                ID: p.ID || p.id,
-                OwnerID: p.OwnerID || p.owner_id,
-                Name: p.Name || p.name,
-                Type: p.Type || p.type,
-                Breed: p.Breed || p.breed,
-                Age: p.Age || p.age,
-                Description: p.Description || p.description,
-                AdoptionMode: p.AdoptionMode || p.adoption_mode || 'strict'
-            }));
-            
-            console.log('Mapped pets:', this.pets);
-            
-            if (this.pets.length === 0) {
-                this.showEmptyMessage();
-            } else {
-                this.currentIndex = 0;
-                this.renderCurrentCard();
-            }
-        } catch (error) {
-            console.error('Failed to load feed:', error);
-            this.showEmptyMessage();
+        let rawPets = [];
+        
+        if (Array.isArray(data)) {
+            // Сохраняем и pet, и photos из каждого элемента
+            rawPets = data.map(item => {
+                const pet = item.pet || item;
+                return {
+                    ...pet,
+                    Photos: item.photos || []   // Сохраняем photos на уровне pet
+                };
+            });
+        } else if (data.pets) {
+            rawPets = data.pets;
+        } else {
+            rawPets = [data];
         }
+        
+        this.pets = rawPets.map(p => ({
+            ID: p.ID || p.id,
+            OwnerID: p.OwnerID || p.owner_id,
+            Name: p.Name || p.name,
+            Type: p.Type || p.type,
+            Breed: p.Breed || p.breed,
+            Age: p.Age || p.age,
+            Description: p.Description || p.description,
+            AdoptionMode: p.AdoptionMode || p.adoption_mode || 'strict',
+            Photos: p.Photos || []   // Вот это было пропущено
+        }));
+        
+        console.log('[FeedPage] Mapped pets:', this.pets);
+        if (this.pets.length > 0) {
+            console.log('[FeedPage] Photos первого питомца:', this.pets[0].Photos);
+        }
+        
+        if (this.pets.length === 0) {
+            this.showEmptyMessage();
+        } else {
+            this.currentIndex = 0;
+            this.renderCurrentCard();
+        }
+    } catch (error) {
+        console.error('[FeedPage] Failed to load feed:', error);
+        this.showEmptyMessage();
     }
+}
 
     async savePreferences(prefs) {
         const cleanPrefs = {
