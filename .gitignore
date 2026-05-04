@@ -1,0 +1,19 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# бд
+*.db
+
+# Logs
+*.log
+
+# Binaries
+*.exe
+*.dll
